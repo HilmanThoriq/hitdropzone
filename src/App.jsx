@@ -36,6 +36,12 @@ export default function App() {
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [pinError, setPinError] = useState('');
+
+  useEffect(() => {
+    loadFolders();
+    deleteExpiredFolders();
+  }, []);
 
   useEffect(() => {
     loadFolders();
@@ -61,7 +67,10 @@ export default function App() {
         icon: 'error',
         title: 'Gagal Memuat Data',
         text: 'Terjadi kesalahan saat memuat folder',
-        confirmButtonColor: '#4F46E5',
+        confirmButtonColor: '#EF4444',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
     } finally {
       setLoading(false);
@@ -111,7 +120,10 @@ export default function App() {
         icon: 'error',
         title: 'File Terlalu Besar',
         text: `Beberapa file melebihi 100MB: ${invalidFiles.map(f => f.name).join(', ')}`,
-        confirmButtonColor: '#4F46E5',
+        confirmButtonColor: '#EF4444',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
       return;
     }
@@ -124,7 +136,10 @@ export default function App() {
         icon: 'error',
         title: 'Kapasitas Folder Penuh',
         text: 'Total ukuran file tidak boleh melebihi 1GB per folder',
-        confirmButtonColor: '#4F46E5',
+        confirmButtonColor: '#EF4444',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
       return;
     }
@@ -178,12 +193,41 @@ export default function App() {
       cancelButtonColor: '#6B7280',
       customClass: {
         popup: 'swal-wide',
-        confirmButton: 'swal-button-fix',
-        cancelButton: 'swal-button-fix'
+        confirmButton: 'swal-button-visible',
+        cancelButton: 'swal-button-visible'
       }
     });
 
     return result.isConfirmed;
+  };
+
+  const validatePin = (pin) => {
+    if (!pin.trim()) {
+      setPinError('');
+      return false;
+    }
+    if (pin.length < 4) {
+      setPinError('PIN harus minimal 4 digit');
+      return false;
+    }
+    setPinError('');
+    return true;
+  };
+
+  const handlePinChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '');
+    setPasscode(value);
+    if (value.length > 0) {
+      validatePin(value);
+    } else {
+      setPinError('');
+    }
+  };
+
+  const handlePinBlur = () => {
+    if (passcode.trim()) {
+      validatePin(passcode);
+    }
   };
 
   const handleUpload = async () => {
@@ -192,7 +236,10 @@ export default function App() {
         icon: 'warning',
         title: 'Nama Folder Kosong',
         text: 'Silakan masukkan nama folder',
-        confirmButtonColor: '#4F46E5',
+        confirmButtonColor: '#F59E0B',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
       return;
     }
@@ -202,37 +249,52 @@ export default function App() {
         icon: 'warning',
         title: 'Nama Pemilik Kosong',
         text: 'Silakan masukkan nama pemilik folder',
-        confirmButtonColor: '#4F46E5',
+        confirmButtonColor: '#F59E0B',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
       return;
     }
 
     if (!passcode.trim()) {
+      setPinError('PIN tidak boleh kosong');
       Swal.fire({
         icon: 'warning',
         title: 'PIN Kosong',
         text: 'Silakan masukkan PIN',
-        confirmButtonColor: '#4F46E5',
+        confirmButtonColor: '#F59E0B',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
       return;
     }
 
     if (!/^\d+$/.test(passcode)) {
+      setPinError('PIN hanya boleh berisi angka (0-9)');
       Swal.fire({
         icon: 'warning',
         title: 'PIN Harus Angka',
         text: 'PIN hanya boleh berisi angka (0-9)',
-        confirmButtonColor: '#4F46E5',
+        confirmButtonColor: '#F59E0B',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
       return;
     }
 
     if (passcode.length < 4) {
+      setPinError('PIN harus minimal 4 digit');
       Swal.fire({
         icon: 'warning',
         title: 'PIN Terlalu Pendek',
         text: 'PIN harus minimal 4 digit',
-        confirmButtonColor: '#4F46E5',
+        confirmButtonColor: '#F59E0B',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
       return;
     }
@@ -242,7 +304,10 @@ export default function App() {
         icon: 'warning',
         title: 'Tidak Ada File',
         text: 'Silakan pilih file untuk diunggah',
-        confirmButtonColor: '#4F46E5',
+        confirmButtonColor: '#F59E0B',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
       return;
     }
@@ -317,11 +382,15 @@ export default function App() {
         title: 'Berhasil!',
         html: `Folder "${folderName}" berhasil diunggah dengan ${uploadedFiles.length} file<br><small style="color: #6B7280;">File akan otomatis terhapus dalam 7 hari</small>`,
         confirmButtonColor: '#10B981',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
 
       setFolderName('');
       setOwnerName('');
       setPasscode('');
+      setPinError('');
       setUploadFiles([]);
       setShowPasscode(false);
       await loadFolders();
@@ -332,6 +401,9 @@ export default function App() {
         title: 'Gagal Mengunggah',
         text: error.message || 'Terjadi kesalahan saat mengunggah file',
         confirmButtonColor: '#EF4444',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
     }
   };
@@ -353,8 +425,8 @@ export default function App() {
       confirmButtonColor: '#4F46E5',
       cancelButtonColor: '#6B7280',
       customClass: {
-        confirmButton: 'swal-button-fix',
-        cancelButton: 'swal-button-fix'
+        confirmButton: 'swal-button-visible',
+        cancelButton: 'swal-button-visible'
       },
       inputValidator: (value) => {
         if (!value) {
@@ -381,6 +453,9 @@ export default function App() {
             title: 'PIN Salah',
             text: 'Silakan coba lagi',
             confirmButtonColor: '#EF4444',
+            customClass: {
+              confirmButton: 'swal-button-visible'
+            }
           });
         }
       }
@@ -414,6 +489,9 @@ export default function App() {
         title: 'Gagal Download',
         text: 'Terjadi kesalahan saat mengunduh file',
         confirmButtonColor: '#EF4444',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
     }
   };
@@ -424,6 +502,9 @@ export default function App() {
       text: `${folder.files.length} file akan diunduh satu per satu`,
       icon: 'info',
       confirmButtonColor: '#10B981',
+      customClass: {
+        confirmButton: 'swal-button-visible'
+      }
     });
 
     for (let i = 0; i < folder.files.length; i++) {
@@ -453,8 +534,8 @@ export default function App() {
       confirmButtonText: 'Ya, Hapus!',
       cancelButtonText: 'Batal',
       customClass: {
-        confirmButton: 'swal-button-fix',
-        cancelButton: 'swal-button-fix'
+        confirmButton: 'swal-button-visible',
+        cancelButton: 'swal-button-visible'
       },
       inputValidator: (value) => {
         if (!value) {
@@ -474,6 +555,9 @@ export default function App() {
         title: 'PIN Salah',
         text: 'PIN yang Anda masukkan tidak sesuai',
         confirmButtonColor: '#EF4444',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
       return;
     }
@@ -519,6 +603,9 @@ export default function App() {
         title: 'Gagal Menghapus',
         text: 'Terjadi kesalahan saat menghapus folder',
         confirmButtonColor: '#EF4444',
+        customClass: {
+          confirmButton: 'swal-button-visible'
+        }
       });
     }
   };
@@ -531,11 +618,11 @@ export default function App() {
   };
 
   const filteredFolders = folders.filter(folder => {
+    if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
-    return (
-      folder.name.toLowerCase().includes(searchLower) ||
-      folder.ownerName.toLowerCase().includes(searchLower)
-    );
+    const folderName = folder.name ? folder.name.toLowerCase() : '';
+    const ownerName = folder.ownerName ? folder.ownerName.toLowerCase() : '';
+    return folderName.includes(searchLower) || ownerName.includes(searchLower);
   });
 
   return (
@@ -545,16 +632,29 @@ export default function App() {
           width: 600px !important;
           max-width: 90% !important;
         }
-        .swal-button-fix {
+        .swal-button-visible {
+          display: inline-block !important;
           padding: 10px 24px !important;
           font-size: 14px !important;
           font-weight: 500 !important;
           border-radius: 6px !important;
           border: none !important;
           cursor: pointer !important;
+          color: white !important;
+          opacity: 1 !important;
+        }
+        .swal-button-visible:hover {
+          opacity: 0.9 !important;
+          filter: brightness(0.95) !important;
         }
         .swal2-actions {
           gap: 10px !important;
+        }
+        .swal2-styled.swal2-confirm {
+          background-color: var(--confirm-color, #10B981) !important;
+        }
+        .swal2-styled.swal2-cancel {
+          background-color: #6B7280 !important;
         }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button {
@@ -658,15 +758,15 @@ export default function App() {
                   <input
                     type={showPasscode ? 'text' : 'password'}
                     value={passcode}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '');
-                      setPasscode(value);
-                    }}
+                    onChange={handlePinChange}
+                    onBlur={handlePinBlur}
                     placeholder="Contoh: 1234"
                     maxLength="10"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent pr-12"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 pr-12 ${
+                      pinError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-transparent'
+                    }`}
                   />
                   <button
                     type="button"
@@ -676,7 +776,11 @@ export default function App() {
                     {showPasscode ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">PIN ini diperlukan untuk membuka dan menghapus folder</p>
+                {pinError ? (
+                  <p className="text-xs text-red-600 mt-1 font-medium">{pinError}</p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">PIN ini diperlukan untuk membuka dan menghapus folder</p>
+                )}
               </div>
 
               <div>
