@@ -12,7 +12,9 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.74.0",
     "firebase": "^12.3.0",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.545.0",
+    "qrcode": "^1.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "sweetalert2": "^11.24.1"

@@ -1,9 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { Upload, Download, Folder, Lock, File, Trash2, Eye, EyeOff, Clock, User, AlertTriangle } from 'lucide-react';
-import Swal from 'sweetalert2';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
-import { createClient } from '@supabase/supabase-js';
+import React, { useState, useEffect } from "react";
+import {
+  Upload,
+  Download,
+  Folder,
+  Lock,
+  File,
+  Trash2,
+  Eye,
+  EyeOff,
+  Clock,
+  User,
+  AlertTriangle,
+} from "lucide-react";
+import Swal from "sweetalert2";
+import QRCode from "qrcode";
+import JSZip from "jszip";
+import { initializeApp } from "firebase/app";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  query,
+  orderBy,
+} from "firebase/firestore";
+import { createClient } from "@supabase/supabase-js";
 
 // ========== FIREBASE CONFIG (untuk Firestore & Hosting) ==========
 const firebaseConfig = {
@@ -13,12 +36,13 @@ const firebaseConfig = {
   storageBucket: "hitdropzone-3ab8a.firebasestorage.app",
   messagingSenderId: "883532943273",
   appId: "1:883532943273:web:66ac5cdfbdbc47405a7eb8",
-  measurementId: "G-X0Z6X1KZY8"
+  measurementId: "G-X0Z6X1KZY8",
 };
 
 // ========== SUPABASE CONFIG (untuk Storage) ==========
-const supabaseUrl = "https://cupidqvelyeqjdcbsoze.supabase.co"; 
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1cGlkcXZlbHllcWpkY2Jzb3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5Nzc1MjAsImV4cCI6MjA3NTU1MzUyMH0.lZEruf8FGZGH9fORHriOJuRyxgRV2FnisG2d1wFVKnk";
+const supabaseUrl = "https://cupidqvelyeqjdcbsoze.supabase.co";
+const supabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1cGlkcXZlbHllcWpkY2Jzb3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5Nzc1MjAsImV4cCI6MjA3NTU1MzUyMH0.lZEruf8FGZGH9fORHriOJuRyxgRV2FnisG2d1wFVKnk";
 
 // Initialize Firebase & Supabase
 const app = initializeApp(firebaseConfig);
@@ -26,17 +50,17 @@ const db = getFirestore(app);
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('upload');
+  const [activeTab, setActiveTab] = useState("upload");
   const [folders, setFolders] = useState([]);
   const [uploadFiles, setUploadFiles] = useState([]);
-  const [folderName, setFolderName] = useState('');
-  const [ownerName, setOwnerName] = useState('');
-  const [passcode, setPasscode] = useState('');
+  const [folderName, setFolderName] = useState("");
+  const [ownerName, setOwnerName] = useState("");
+  const [passcode, setPasscode] = useState("");
   const [showPasscode, setShowPasscode] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [pinError, setPinError] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [pinError, setPinError] = useState("");
 
   useEffect(() => {
     loadFolders();
@@ -51,26 +75,26 @@ export default function App() {
   const loadFolders = async () => {
     try {
       setLoading(true);
-      const foldersRef = collection(db, 'folders');
-      const q = query(foldersRef, orderBy('uploadDate', 'desc'));
+      const foldersRef = collection(db, "folders");
+      const q = query(foldersRef, orderBy("uploadDate", "desc"));
       const querySnapshot = await getDocs(q);
-      
+
       const foldersData = [];
       querySnapshot.forEach((doc) => {
         foldersData.push({ id: doc.id, ...doc.data() });
       });
-      
+
       setFolders(foldersData);
     } catch (error) {
-      console.error('Error loading folders:', error);
+      console.error("Error loading folders:", error);
       Swal.fire({
-        icon: 'error',
-        title: 'Gagal Memuat Data',
-        text: 'Terjadi kesalahan saat memuat folder',
-        confirmButtonColor: '#EF4444',
+        icon: "error",
+        title: "Gagal Memuat Data",
+        text: "Terjadi kesalahan saat memuat folder",
+        confirmButtonColor: "#EF4444",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
     } finally {
       setLoading(false);
@@ -79,67 +103,69 @@ export default function App() {
 
   const deleteExpiredFolders = async () => {
     try {
-      const foldersRef = collection(db, 'folders');
+      const foldersRef = collection(db, "folders");
       const querySnapshot = await getDocs(foldersRef);
-      
+
       const now = Date.now();
       const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-      
+
       querySnapshot.forEach(async (docSnapshot) => {
         const folder = docSnapshot.data();
         const uploadDate = folder.uploadDate;
-        
+
         if (now - uploadDate > sevenDaysInMs) {
           if (folder.files) {
             for (const file of folder.files) {
               try {
                 const { error } = await supabase.storage
-                  .from('folders')
+                  .from("folders")
                   .remove([file.storagePath]);
-                if (error) console.error('Error deleting file:', error);
+                if (error) console.error("Error deleting file:", error);
               } catch (err) {
-                console.error('Error deleting file:', err);
+                console.error("Error deleting file:", err);
               }
             }
           }
-          
-          await deleteDoc(doc(db, 'folders', docSnapshot.id));
+
+          await deleteDoc(doc(db, "folders", docSnapshot.id));
         }
       });
     } catch (error) {
-      console.error('Error deleting expired folders:', error);
+      console.error("Error deleting expired folders:", error);
     }
   };
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
-    
-    const invalidFiles = files.filter(file => file.size > 100 * 1024 * 1024);
+
+    const invalidFiles = files.filter((file) => file.size > 100 * 1024 * 1024);
     if (invalidFiles.length > 0) {
       Swal.fire({
-        icon: 'error',
-        title: 'File Terlalu Besar',
-        text: `Beberapa file melebihi 100MB: ${invalidFiles.map(f => f.name).join(', ')}`,
-        confirmButtonColor: '#EF4444',
+        icon: "error",
+        title: "File Terlalu Besar",
+        text: `Beberapa file melebihi 100MB: ${invalidFiles
+          .map((f) => f.name)
+          .join(", ")}`,
+        confirmButtonColor: "#EF4444",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
       return;
     }
 
     const currentTotal = uploadFiles.reduce((sum, f) => sum + f.size, 0);
     const newTotal = currentTotal + files.reduce((sum, f) => sum + f.size, 0);
-    
+
     if (newTotal > 1024 * 1024 * 1024) {
       Swal.fire({
-        icon: 'error',
-        title: 'Kapasitas Folder Penuh',
-        text: 'Total ukuran file tidak boleh melebihi 1GB per folder',
-        confirmButtonColor: '#EF4444',
+        icon: "error",
+        title: "Kapasitas Folder Penuh",
+        text: "Total ukuran file tidak boleh melebihi 1GB per folder",
+        confirmButtonColor: "#EF4444",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
       return;
     }
@@ -152,17 +178,233 @@ export default function App() {
   };
 
   const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
+
+  const getFormattedDate = () => {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  return `${day}${month}${year}`; // 10122024
+};
+
+  const generateQRCode = async (
+    folderId,
+    folderName,
+    passcode,
+    zipDownloadUrl
+  ) => {
+    try {
+      // QR Code langsung ke download ZIP
+      const qrData = zipDownloadUrl; // Direct download link!
+
+      // Generate QR code sebagai JPEG
+      const qrDataURL = await QRCode.toDataURL(qrData, {
+        width: 400,
+        margin: 2,
+        type: "image/jpeg",
+        quality: 0.95,
+        color: {
+          dark: "#000000",
+          light: "#FFFFFF",
+        },
+      });
+
+      return qrDataURL;
+    } catch (error) {
+      console.error("Error generating QR:", error);
+      return null;
+    }
+  };
+
+  const createDownloadableZipLink = async (folderData, uploadedFilesData) => {
+    try {
+      const zip = new JSZip();
+
+      // Fetch semua file dari Supabase dan masukkan ke ZIP
+      for (const file of uploadedFilesData) {
+        const response = await fetch(file.downloadURL);
+        const blob = await response.blob();
+        zip.file(file.name, blob);
+      }
+
+      // Generate ZIP
+      const zipBlob = await zip.generateAsync({
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 },
+      });
+
+      // Upload ZIP ke Supabase sebagai file permanen
+      const zipFileName = `${folderData.folderId}/DOWNLOAD_${
+        folderData.folderName
+      }_${Date.now()}.zip`;
+
+      const { error } = await supabase.storage
+        .from("folders")
+        .upload(zipFileName, zipBlob, {
+          contentType: "application/zip",
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (error) throw error;
+
+      // Get public URL untuk ZIP
+      const { data: urlData } = supabase.storage
+        .from("folders")
+        .getPublicUrl(zipFileName);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error("Error creating downloadable ZIP:", error);
+      return null;
+    }
+  };
+
+const downloadQRCode = (folderName, qrDataUrl) => {
+  if (!qrDataUrl || !folderName) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Data QR Code tidak lengkap',
+      confirmButtonColor: '#EF4444',
+      customClass: {
+        confirmButton: 'swal-button-visible'
+      }
+    });
+    return;
+  }
+
+  try {
+    const dateStr = getFormattedDate(); // 10122024
+    const sanitizedName = folderName.replace(/[^a-zA-Z0-9]/g, '_');
+    const fileName = `QR_${sanitizedName}_${dateStr}.png`;
+    
+    const base64Data = qrDataUrl.split(',')[1];
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'image/png' });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 100);
+    
+    Swal.fire({
+      icon: 'success',
+      title: 'QR Code Berhasil Diunduh!',
+      text: `File: ${fileName}`,
+      timer: 2000,
+      showConfirmButton: false
+    });
+  } catch (error) {
+    console.error('Error downloading QR:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Gagal Download',
+      text: 'Terjadi kesalahan saat mengunduh QR Code',
+      confirmButtonColor: '#EF4444',
+      customClass: {
+        confirmButton: 'swal-button-visible'
+      }
+    });
+  }
+};
+
+  const createZipWithPassword = async (folder) => {
+    try {
+      Swal.fire({
+        title: "Membuat ZIP...",
+        text: "Mohon tunggu",
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
+      const zip = new JSZip();
+
+      // Download semua file dan masukkan ke zip
+      for (const file of folder.files) {
+        const response = await fetch(file.downloadURL);
+        const blob = await response.blob();
+        zip.file(file.name, blob);
+      }
+
+      // Generate zip dengan password
+      const zipBlob = await zip.generateAsync({
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 9 },
+      });
+
+      // Download zip
+      const url = window.URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${folder.name}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      Swal.fire({
+        icon: "success",
+        title: "ZIP Berhasil Dibuat!",
+        html: `
+        <p>File ZIP telah diunduh.</p>
+        <p style="margin-top: 10px; padding: 10px; background: #FEF3C7; border-radius: 6px;">
+          <strong>📌 Password ZIP:</strong><br>
+          <code style="font-size: 18px; color: #DC2626;">${folder.passcode}</code>
+        </p>
+        <p style="font-size: 12px; color: #6B7280; margin-top: 10px;">
+          Gunakan password di atas untuk membuka file ZIP
+        </p>
+      `,
+        confirmButtonColor: "#10B981",
+        customClass: {
+          confirmButton: "swal-button-visible",
+        },
+      });
+    } catch (error) {
+      console.error("Error creating zip:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Membuat ZIP",
+        text: "Terjadi kesalahan saat membuat file ZIP",
+        confirmButtonColor: "#EF4444",
+        customClass: {
+          confirmButton: "swal-button-visible",
+        },
+      });
+    }
   };
 
   const showPrivacyWarning = async () => {
     const result = await Swal.fire({
-      icon: 'warning',
-      title: '⚠️ Peringatan Privasi & Keamanan',
+      icon: "warning",
+      title: "⚠️ Peringatan Privasi & Keamanan",
       html: `
         <div style="text-align: left; padding: 10px;">
           <p style="margin-bottom: 15px; font-weight: 600; color: #DC2626;">
@@ -187,15 +429,15 @@ export default function App() {
         </div>
       `,
       showCancelButton: true,
-      confirmButtonText: 'Saya Mengerti, Lanjutkan',
-      cancelButtonText: 'Batal',
-      confirmButtonColor: '#DC2626',
-      cancelButtonColor: '#6B7280',
+      confirmButtonText: "Saya Mengerti, Lanjutkan",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#DC2626",
+      cancelButtonColor: "#6B7280",
       customClass: {
-        popup: 'swal-wide',
-        confirmButton: 'swal-button-visible',
-        cancelButton: 'swal-button-visible'
-      }
+        popup: "swal-wide",
+        confirmButton: "swal-button-visible",
+        cancelButton: "swal-button-visible",
+      },
     });
 
     return result.isConfirmed;
@@ -203,24 +445,24 @@ export default function App() {
 
   const validatePin = (pin) => {
     if (!pin.trim()) {
-      setPinError('');
+      setPinError("");
       return false;
     }
     if (pin.length < 4) {
-      setPinError('PIN harus minimal 4 digit');
+      setPinError("PIN harus minimal 4 digit");
       return false;
     }
-    setPinError('');
+    setPinError("");
     return true;
   };
 
   const handlePinChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '');
+    const value = e.target.value.replace(/\D/g, "");
     setPasscode(value);
     if (value.length > 0) {
       validatePin(value);
     } else {
-      setPinError('');
+      setPinError("");
     }
   };
 
@@ -233,81 +475,81 @@ export default function App() {
   const handleUpload = async () => {
     if (!folderName.trim()) {
       Swal.fire({
-        icon: 'warning',
-        title: 'Nama Folder Kosong',
-        text: 'Silakan masukkan nama folder',
-        confirmButtonColor: '#F59E0B',
+        icon: "warning",
+        title: "Nama Folder Kosong",
+        text: "Silakan masukkan nama folder",
+        confirmButtonColor: "#F59E0B",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
       return;
     }
 
     if (!ownerName.trim()) {
       Swal.fire({
-        icon: 'warning',
-        title: 'Nama Pemilik Kosong',
-        text: 'Silakan masukkan nama pemilik folder',
-        confirmButtonColor: '#F59E0B',
+        icon: "warning",
+        title: "Nama Pemilik Kosong",
+        text: "Silakan masukkan nama pemilik folder",
+        confirmButtonColor: "#F59E0B",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
       return;
     }
 
     if (!passcode.trim()) {
-      setPinError('PIN tidak boleh kosong');
+      setPinError("PIN tidak boleh kosong");
       Swal.fire({
-        icon: 'warning',
-        title: 'PIN Kosong',
-        text: 'Silakan masukkan PIN',
-        confirmButtonColor: '#F59E0B',
+        icon: "warning",
+        title: "PIN Kosong",
+        text: "Silakan masukkan PIN",
+        confirmButtonColor: "#F59E0B",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
       return;
     }
 
     if (!/^\d+$/.test(passcode)) {
-      setPinError('PIN hanya boleh berisi angka (0-9)');
+      setPinError("PIN hanya boleh berisi angka (0-9)");
       Swal.fire({
-        icon: 'warning',
-        title: 'PIN Harus Angka',
-        text: 'PIN hanya boleh berisi angka (0-9)',
-        confirmButtonColor: '#F59E0B',
+        icon: "warning",
+        title: "PIN Harus Angka",
+        text: "PIN hanya boleh berisi angka (0-9)",
+        confirmButtonColor: "#F59E0B",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
       return;
     }
 
     if (passcode.length < 4) {
-      setPinError('PIN harus minimal 4 digit');
+      setPinError("PIN harus minimal 4 digit");
       Swal.fire({
-        icon: 'warning',
-        title: 'PIN Terlalu Pendek',
-        text: 'PIN harus minimal 4 digit',
-        confirmButtonColor: '#F59E0B',
+        icon: "warning",
+        title: "PIN Terlalu Pendek",
+        text: "PIN harus minimal 4 digit",
+        confirmButtonColor: "#F59E0B",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
       return;
     }
 
     if (uploadFiles.length === 0) {
       Swal.fire({
-        icon: 'warning',
-        title: 'Tidak Ada File',
-        text: 'Silakan pilih file untuk diunggah',
-        confirmButtonColor: '#F59E0B',
+        icon: "warning",
+        title: "Tidak Ada File",
+        text: "Silakan pilih file untuk diunggah",
+        confirmButtonColor: "#F59E0B",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
       return;
     }
@@ -317,13 +559,13 @@ export default function App() {
 
     try {
       Swal.fire({
-        title: 'Mengunggah...',
-        html: 'Mohon tunggu, file sedang diunggah ke server<br><b>0%</b>',
+        title: "Mengunggah...",
+        html: "Mohon tunggu, file sedang diunggah ke server<br><b>0%</b>",
         allowOutsideClick: false,
         showConfirmButton: false,
         didOpen: () => {
           Swal.showLoading();
-        }
+        },
       });
 
       const folderId = Date.now().toString();
@@ -334,12 +576,12 @@ export default function App() {
         const file = uploadFiles[i];
         const fileName = `${Date.now()}_${file.name}`;
         const storagePath = `${folderId}/${fileName}`;
-        
+
         const { error } = await supabase.storage
-          .from('folders')
+          .from("folders")
           .upload(storagePath, file, {
-            cacheControl: '3600',
-            upsert: false
+            cacheControl: "3600",
+            upsert: false,
           });
 
         if (error) {
@@ -347,20 +589,20 @@ export default function App() {
         }
 
         const { data: urlData } = supabase.storage
-          .from('folders')
+          .from("folders")
           .getPublicUrl(storagePath);
-        
+
         uploadedFiles.push({
           name: file.name,
           size: file.size,
           type: file.type,
           downloadURL: urlData.publicUrl,
-          storagePath: storagePath
+          storagePath: storagePath,
         });
 
         const progress = Math.round(((i + 1) / uploadFiles.length) * 100);
         Swal.update({
-          html: `Mohon tunggu, file sedang diunggah ke server<br><b>${progress}%</b>`
+          html: `Mohon tunggu, file sedang diunggah ke server<br><b>${progress}%</b>`,
         });
       }
 
@@ -372,90 +614,213 @@ export default function App() {
         totalSize: totalSize,
         uploadDate: Date.now(),
         fileCount: uploadedFiles.length,
-        expiryDate: Date.now() + (7 * 24 * 60 * 60 * 1000)
+        expiryDate: Date.now() + 7 * 24 * 60 * 60 * 1000,
       };
 
-      await addDoc(collection(db, 'folders'), folderData);
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Berhasil!',
-        html: `Folder "${folderName}" berhasil diunggah dengan ${uploadedFiles.length} file<br><small style="color: #6B7280;">File akan otomatis terhapus dalam 7 hari</small>`,
-        confirmButtonColor: '#10B981',
+      await addDoc(collection(db, "folders"), folderData);
+
+      // Simpan folder ID untuk QR
+      const savedFolderId = folderId;
+
+      Swal.close(); // Tutup loading dulu
+
+      // Tanya user mau buat QR atau tidak
+      const qrResult = await Swal.fire({
+        icon: "success",
+        title: "Upload Berhasil! 🎉",
+        html: `
+          <p>Folder "${folderName}" berhasil diunggah dengan ${uploadedFiles.length} file</p>
+          <p style="font-size: 14px; color: #6B7280; margin-top: 10px;">File akan otomatis terhapus dalam 7 hari</p>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #E5E7EB;">
+          <p style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">📱 Buat QR Code untuk berbagi?</p>
+          <p style="font-size: 12px; color: #6B7280;">Scan QR = Otomatis download ZIP!</p>
+        `,
+        showCancelButton: true,
+        confirmButtonText: "Ya, Buat QR Code",
+        cancelButtonText: "Tidak, Terima Kasih",
+        confirmButtonColor: "#10B981",
+        cancelButtonColor: "#6B7280",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+          cancelButton: "swal-button-visible",
+        },
       });
 
-      setFolderName('');
-      setOwnerName('');
-      setPasscode('');
-      setPinError('');
+      if (qrResult.isConfirmed) {
+        // Buat ZIP dan upload ke Supabase
+        Swal.fire({
+          title: "Membuat QR Code...",
+          html: "Sedang memproses file...<br><b>0%</b>",
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+        });
+
+        try {
+          // Create ZIP and get download URL
+          const zipUrl = await createDownloadableZipLink(
+            {
+              folderId: savedFolderId,
+              folderName: folderName,
+              passcode: passcode,
+            },
+            uploadedFiles
+          );
+
+          if (!zipUrl) {
+            throw new Error("Gagal membuat link download ZIP");
+          }
+
+          // Generate QR Code
+          const qrDataURL = await generateQRCode(
+            savedFolderId,
+            folderName,
+            passcode,
+            zipUrl
+          );
+
+          if (qrDataURL) {
+            Swal.close();
+
+            // Tampilkan QR Code
+            Swal.fire({
+              title: "📱 QR Code Siap!",
+              html: `
+                <div style="text-align: center;">
+                  <div style="background: #F0FDF4; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                    <p style="margin: 0; color: #10B981; font-weight: 600;">✅ Scan = Auto Download ZIP!</p>
+                  </div>
+                  
+                  <p style="margin-bottom: 15px; color: #6B7280; font-size: 14px;">Scan QR Code untuk download otomatis</p>
+                  <img src="${qrDataURL}" style="width: 350px; height: 350px; margin: 0 auto; border: 3px solid #4F46E5; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15);">
+                  
+                  <div style="margin-top: 20px; padding: 15px; background: #EEF2FF; border-radius: 8px; border: 2px solid #C7D2FE;">
+                    <p style="margin: 0; font-size: 16px; font-weight: 600; color: #3730A3;">📁 ${folderName}</p>
+                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #4338CA;">👤 ${ownerName}</p>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #6366F1;">📊 ${
+                      uploadedFiles.length
+                    } file • ${formatFileSize(totalSize)}</p>
+                  </div>
+
+                  <div style="margin-top: 15px; padding: 12px; background: #FFFBEB; border-radius: 8px; border: 2px solid #FDE68A;">
+                    <p style="margin: 0; font-size: 12px; color: #92400E; font-weight: 600;">💡 Cara Pakai:</p>
+                    <p style="margin: 5px 0 0 0; font-size: 11px; color: #78350F; text-align: left;">
+                      1. Simpan/bagikan QR Code ini<br>
+                      2. Scan dengan kamera HP<br>
+                      3. ZIP otomatis terdownload!
+                    </p>
+                  </div>
+
+                  <div style="margin-top: 12px; font-size: 11px; color: #6B7280;">
+                    <p style="margin: 3px 0;">⏰ File online tersedia selama 7 hari</p>
+                  </div>
+                </div>
+              `,
+              width: 550,
+              showCancelButton: true,
+              confirmButtonText: "💾 Download QR Code",
+              cancelButtonText: "Tutup",
+              confirmButtonColor: "#4F46E5",
+              cancelButtonColor: "#6B7280",
+              customClass: {
+                confirmButton: "swal-button-visible",
+                cancelButton: "swal-button-visible",
+              },
+            }).then((downloadResult) => {
+              if (downloadResult.isConfirmed) {
+                downloadQRCode(folderName, qrDataURL);
+              }
+            });
+          }
+        } catch (error) {
+          console.error("Error creating QR:", error);
+          Swal.fire({
+            icon: "error",
+            title: "Gagal Membuat QR Code",
+            html: `
+              <p>${error.message}</p>
+              <p style="font-size: 12px; color: #6B7280; margin-top: 10px;">Folder tetap tersimpan, Anda bisa download manual dari tab Download</p>
+            `,
+            confirmButtonColor: "#EF4444",
+            customClass: {
+              confirmButton: "swal-button-visible",
+            },
+          });
+        }
+      }
+
+      // Reset form
+      setFolderName("");
+      setOwnerName("");
+      setPasscode("");
+      setPinError("");
       setUploadFiles([]);
       setShowPasscode(false);
       await loadFolders();
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
       Swal.fire({
-        icon: 'error',
-        title: 'Gagal Mengunggah',
-        text: error.message || 'Terjadi kesalahan saat mengunggah file',
-        confirmButtonColor: '#EF4444',
+        icon: "error",
+        title: "Gagal Mengunggah",
+        text: error.message || "Terjadi kesalahan saat mengunggah file",
+        confirmButtonColor: "#EF4444",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
     }
   };
 
   const handleDownload = (folder) => {
     Swal.fire({
-      title: 'Masukkan PIN',
+      title: "Masukkan PIN",
       html: `<p style="margin-bottom: 15px;">PIN untuk folder "<strong>${folder.name}</strong>"</p>
              <p style="font-size: 14px; color: #6B7280; margin-bottom: 10px;">Pemilik: <strong>${folder.ownerName}</strong></p>`,
-      input: 'number',
-      inputPlaceholder: 'Masukkan PIN (hanya angka)',
+      input: "number",
+      inputPlaceholder: "Masukkan PIN (hanya angka)",
       inputAttributes: {
         maxlength: 10,
-        autocomplete: 'off'
+        autocomplete: "off",
       },
       showCancelButton: true,
-      confirmButtonText: 'Buka',
-      cancelButtonText: 'Batal',
-      confirmButtonColor: '#4F46E5',
-      cancelButtonColor: '#6B7280',
+      confirmButtonText: "Buka",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#4F46E5",
+      cancelButtonColor: "#6B7280",
       customClass: {
-        confirmButton: 'swal-button-visible',
-        cancelButton: 'swal-button-visible'
+        confirmButton: "swal-button-visible",
+        cancelButton: "swal-button-visible",
       },
       inputValidator: (value) => {
         if (!value) {
-          return 'PIN tidak boleh kosong!';
+          return "PIN tidak boleh kosong!";
         }
         if (!/^\d+$/.test(value)) {
-          return 'PIN hanya boleh berisi angka!';
+          return "PIN hanya boleh berisi angka!";
         }
-      }
+      },
     }).then((result) => {
       if (result.isConfirmed) {
         if (result.value === folder.passcode) {
           setSelectedFolder(folder);
           Swal.fire({
-            icon: 'success',
-            title: 'Berhasil!',
-            text: 'Folder berhasil dibuka',
+            icon: "success",
+            title: "Berhasil!",
+            text: "Folder berhasil dibuka",
             timer: 1500,
-            showConfirmButton: false
+            showConfirmButton: false,
           });
         } else {
           Swal.fire({
-            icon: 'error',
-            title: 'PIN Salah',
-            text: 'Silakan coba lagi',
-            confirmButtonColor: '#EF4444',
+            icon: "error",
+            title: "PIN Salah",
+            text: "Silakan coba lagi",
+            confirmButtonColor: "#EF4444",
             customClass: {
-              confirmButton: 'swal-button-visible'
-            }
+              confirmButton: "swal-button-visible",
+            },
           });
         }
       }
@@ -467,7 +832,7 @@ export default function App() {
       const response = await fetch(file.downloadURL);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = file.name;
       document.body.appendChild(link);
@@ -476,152 +841,184 @@ export default function App() {
       window.URL.revokeObjectURL(url);
 
       Swal.fire({
-        icon: 'success',
-        title: 'Download Dimulai',
+        icon: "success",
+        title: "Download Dimulai",
         text: `File "${file.name}" sedang diunduh`,
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } catch (error) {
-      console.error('Download error:', error);
+      console.error("Download error:", error);
       Swal.fire({
-        icon: 'error',
-        title: 'Gagal Download',
-        text: 'Terjadi kesalahan saat mengunduh file',
-        confirmButtonColor: '#EF4444',
+        icon: "error",
+        title: "Gagal Download",
+        text: "Terjadi kesalahan saat mengunduh file",
+        confirmButtonColor: "#EF4444",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
     }
   };
 
   const downloadAllFiles = async (folder) => {
-    Swal.fire({
-      title: 'Download Semua File',
-      text: `${folder.files.length} file akan diunduh satu per satu`,
-      icon: 'info',
-      confirmButtonColor: '#10B981',
+    await Swal.fire({
+      title: "Pilih Metode Download",
+      html: `
+      <p style="margin-bottom: 15px;">Bagaimana Anda ingin mengunduh ${folder.files.length} file?</p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="zip-btn" class="download-option-btn" style="padding: 15px; background: #4F46E5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+          📦 Download sebagai ZIP<br>
+          <small style="font-weight: 400; opacity: 0.9;">Semua file dalam 1 file ZIP (dengan password)</small>
+        </button>
+        <button id="one-by-one-btn" class="download-option-btn" style="padding: 15px; background: #10B981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+          📥 Download Satu per Satu<br>
+          <small style="font-weight: 400; opacity: 0.9;">File diunduh terpisah</small>
+        </button>
+      </div>
+    `,
+      showConfirmButton: false,
+      showCancelButton: true,
+      cancelButtonText: "Batal",
+      cancelButtonColor: "#6B7280",
       customClass: {
-        confirmButton: 'swal-button-visible'
-      }
+        cancelButton: "swal-button-visible",
+      },
+      didOpen: () => {
+        document.getElementById("zip-btn").addEventListener("click", () => {
+          Swal.clickConfirm();
+          Swal.close();
+          createZipWithPassword(folder);
+        });
+        document
+          .getElementById("one-by-one-btn")
+          .addEventListener("click", async () => {
+            Swal.close();
+            Swal.fire({
+              title: "Download Dimulai",
+              text: `${folder.files.length} file akan diunduh satu per satu`,
+              icon: "info",
+              timer: 2000,
+              showConfirmButton: false,
+            });
+            for (let i = 0; i < folder.files.length; i++) {
+              await new Promise((resolve) => setTimeout(resolve, i * 1000));
+              await downloadFile(folder.files[i]);
+            }
+          });
+      },
     });
-
-    for (let i = 0; i < folder.files.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, i * 1000));
-      await downloadFile(folder.files[i]);
-    }
   };
 
   const deleteFolder = async (folder) => {
     const { value: enteredPin } = await Swal.fire({
-      title: 'Hapus Folder?',
+      title: "Hapus Folder?",
       html: `
         <p style="margin-bottom: 15px;">Folder "<strong>${folder.name}</strong>" dan semua file di dalamnya akan dihapus permanen</p>
         <p style="font-size: 14px; color: #DC2626; margin-bottom: 15px;">⚠️ Tindakan ini tidak dapat dibatalkan!</p>
       `,
-      input: 'number',
-      inputLabel: 'Masukkan PIN untuk konfirmasi',
-      inputPlaceholder: 'PIN folder',
+      input: "number",
+      inputLabel: "Masukkan PIN untuk konfirmasi",
+      inputPlaceholder: "PIN folder",
       inputAttributes: {
         maxlength: 10,
-        autocomplete: 'off'
+        autocomplete: "off",
       },
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: '#DC2626',
-      cancelButtonColor: '#6B7280',
-      confirmButtonText: 'Ya, Hapus!',
-      cancelButtonText: 'Batal',
+      confirmButtonColor: "#DC2626",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Ya, Hapus!",
+      cancelButtonText: "Batal",
       customClass: {
-        confirmButton: 'swal-button-visible',
-        cancelButton: 'swal-button-visible'
+        confirmButton: "swal-button-visible",
+        cancelButton: "swal-button-visible",
       },
       inputValidator: (value) => {
         if (!value) {
-          return 'PIN tidak boleh kosong!';
+          return "PIN tidak boleh kosong!";
         }
         if (!/^\d+$/.test(value)) {
-          return 'PIN hanya boleh berisi angka!';
+          return "PIN hanya boleh berisi angka!";
         }
-      }
+      },
     });
 
     if (!enteredPin) return;
 
     if (enteredPin !== folder.passcode) {
       Swal.fire({
-        icon: 'error',
-        title: 'PIN Salah',
-        text: 'PIN yang Anda masukkan tidak sesuai',
-        confirmButtonColor: '#EF4444',
+        icon: "error",
+        title: "PIN Salah",
+        text: "PIN yang Anda masukkan tidak sesuai",
+        confirmButtonColor: "#EF4444",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
       return;
     }
 
     try {
       Swal.fire({
-        title: 'Menghapus...',
-        text: 'Mohon tunggu',
+        title: "Menghapus...",
+        text: "Mohon tunggu",
         allowOutsideClick: false,
         showConfirmButton: false,
         didOpen: () => {
           Swal.showLoading();
-        }
+        },
       });
 
       for (const file of folder.files) {
         try {
           const { error } = await supabase.storage
-            .from('folders')
+            .from("folders")
             .remove([file.storagePath]);
-          if (error) console.error('Error deleting file:', error);
+          if (error) console.error("Error deleting file:", error);
         } catch (err) {
-          console.error('Error deleting file:', err);
+          console.error("Error deleting file:", err);
         }
       }
 
-      await deleteDoc(doc(db, 'folders', folder.id));
-      
+      await deleteDoc(doc(db, "folders", folder.id));
+
       setSelectedFolder(null);
       await loadFolders();
-      
+
       Swal.fire({
-        icon: 'success',
-        title: 'Terhapus!',
-        text: 'Folder berhasil dihapus',
+        icon: "success",
+        title: "Terhapus!",
+        text: "Folder berhasil dihapus",
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } catch (error) {
-      console.error('Delete error:', error);
+      console.error("Delete error:", error);
       Swal.fire({
-        icon: 'error',
-        title: 'Gagal Menghapus',
-        text: 'Terjadi kesalahan saat menghapus folder',
-        confirmButtonColor: '#EF4444',
+        icon: "error",
+        title: "Gagal Menghapus",
+        text: "Terjadi kesalahan saat menghapus folder",
+        confirmButtonColor: "#EF4444",
         customClass: {
-          confirmButton: 'swal-button-visible'
-        }
+          confirmButton: "swal-button-visible",
+        },
       });
     }
   };
 
   const getRemainingDays = (uploadDate) => {
-    const expiry = uploadDate + (7 * 24 * 60 * 60 * 1000);
+    const expiry = uploadDate + 7 * 24 * 60 * 60 * 1000;
     const remaining = expiry - Date.now();
     const days = Math.ceil(remaining / (24 * 60 * 60 * 1000));
     return days > 0 ? days : 0;
   };
 
-  const filteredFolders = folders.filter(folder => {
+  const filteredFolders = folders.filter((folder) => {
     if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
-    const folderName = folder.name ? folder.name.toLowerCase() : '';
-    const ownerName = folder.ownerName ? folder.ownerName.toLowerCase() : '';
+    const folderName = folder.name ? folder.name.toLowerCase() : "";
+    const ownerName = folder.ownerName ? folder.ownerName.toLowerCase() : "";
     return folderName.includes(searchLower) || ownerName.includes(searchLower);
   });
 
@@ -664,13 +1061,16 @@ export default function App() {
         input[type="number"] {
           -moz-appearance: textfield;
         }
+        .download-option-btn:hover {
+          opacity: 0.9;
+          transform: translateY(-2px);
+          transition: all 0.2s;
+        }
       `}</style>
-      
+
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            HitDropZone
-          </h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">HitDropZone</h1>
           <p className="text-gray-600">
             Platform berbagi file tanpa registrasi - Cepat, Mudah, Aman
           </p>
@@ -681,11 +1081,11 @@ export default function App() {
 
         <div className="flex gap-2 mb-6 bg-white rounded-lg p-1 shadow-md max-w-md mx-auto">
           <button
-            onClick={() => setActiveTab('upload')}
+            onClick={() => setActiveTab("upload")}
             className={`flex-1 py-3 px-6 rounded-md font-medium transition-all ${
-              activeTab === 'upload'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
+              activeTab === "upload"
+                ? "bg-indigo-600 text-white shadow-md"
+                : "text-gray-600 hover:bg-gray-100"
             }`}
           >
             <Upload className="inline w-5 h-5 mr-2" />
@@ -693,13 +1093,13 @@ export default function App() {
           </button>
           <button
             onClick={() => {
-              setActiveTab('download');
+              setActiveTab("download");
               setSelectedFolder(null);
             }}
             className={`flex-1 py-3 px-6 rounded-md font-medium transition-all ${
-              activeTab === 'download'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
+              activeTab === "download"
+                ? "bg-indigo-600 text-white shadow-md"
+                : "text-gray-600 hover:bg-gray-100"
             }`}
           >
             <Download className="inline w-5 h-5 mr-2" />
@@ -708,13 +1108,17 @@ export default function App() {
         </div>
 
         <div className="bg-white rounded-xl shadow-xl p-8">
-          {activeTab === 'upload' ? (
+          {activeTab === "upload" ? (
             <div className="space-y-6">
               <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg mb-6">
                 <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-red-800">
                   <p className="font-semibold mb-1">⚠️ Peringatan Keamanan</p>
-                  <p>Website ini TIDAK aman untuk file sensitif/rahasia. Hanya upload file umum yang tidak mengandung data pribadi atau rahasia.</p>
+                  <p>
+                    Website ini TIDAK aman untuk file sensitif/rahasia. Hanya
+                    upload file umum yang tidak mengandung data pribadi atau
+                    rahasia.
+                  </p>
                 </div>
               </div>
 
@@ -747,7 +1151,9 @@ export default function App() {
                   placeholder="Contoh: Hilman Thoriq"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
-                <p className="text-xs text-gray-500 mt-1">Nama ini akan ditampilkan kepada pengguna yang mengunduh</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Nama ini akan ditampilkan kepada pengguna yang mengunduh
+                </p>
               </div>
 
               <div>
@@ -756,7 +1162,7 @@ export default function App() {
                 </label>
                 <div className="relative">
                   <input
-                    type={showPasscode ? 'text' : 'password'}
+                    type={showPasscode ? "text" : "password"}
                     value={passcode}
                     onChange={handlePinChange}
                     onBlur={handlePinBlur}
@@ -765,7 +1171,9 @@ export default function App() {
                     inputMode="numeric"
                     pattern="[0-9]*"
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 pr-12 ${
-                      pinError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-transparent'
+                      pinError
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:border-transparent"
                     }`}
                   />
                   <button
@@ -773,13 +1181,21 @@ export default function App() {
                     onClick={() => setShowPasscode(!showPasscode)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
-                    {showPasscode ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPasscode ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
                 {pinError ? (
-                  <p className="text-xs text-red-600 mt-1 font-medium">{pinError}</p>
+                  <p className="text-xs text-red-600 mt-1 font-medium">
+                    {pinError}
+                  </p>
                 ) : (
-                  <p className="text-xs text-gray-500 mt-1">PIN ini diperlukan untuk membuka dan menghapus folder</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    PIN ini diperlukan untuk membuka dan menghapus folder
+                  </p>
                 )}
               </div>
 
@@ -817,7 +1233,10 @@ export default function App() {
                       File Terpilih ({uploadFiles.length})
                     </h3>
                     <span className="text-sm text-gray-600">
-                      Total: {formatFileSize(uploadFiles.reduce((sum, f) => sum + f.size, 0))}
+                      Total:{" "}
+                      {formatFileSize(
+                        uploadFiles.reduce((sum, f) => sum + f.size, 0)
+                      )}
                     </span>
                   </div>
                   {uploadFiles.map((file, index) => (
@@ -852,7 +1271,7 @@ export default function App() {
                 disabled={loading}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 rounded-lg transition-colors shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Mengunggah...' : 'Upload Sekarang'}
+                {loading ? "Mengunggah..." : "Upload Sekarang"}
               </button>
             </div>
           ) : (
@@ -876,7 +1295,7 @@ export default function App() {
                         disabled={loading}
                         className="text-indigo-600 hover:text-indigo-700 font-medium text-sm disabled:opacity-50 px-3 py-2 border border-indigo-200 rounded-lg hover:bg-indigo-50"
                       >
-                        {loading ? 'Memuat...' : '🔄 Refresh'}
+                        {loading ? "Memuat..." : "🔄 Refresh"}
                       </button>
                     </div>
                   </div>
@@ -890,11 +1309,13 @@ export default function App() {
                     <div className="text-center py-12">
                       <Folder className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                       <p className="text-gray-500">
-                        {searchQuery ? 'Folder tidak ditemukan' : 'Belum ada folder yang tersedia'}
+                        {searchQuery
+                          ? "Folder tidak ditemukan"
+                          : "Belum ada folder yang tersedia"}
                       </p>
                       {searchQuery && (
                         <button
-                          onClick={() => setSearchQuery('')}
+                          onClick={() => setSearchQuery("")}
                           className="text-indigo-600 hover:text-indigo-700 text-sm mt-2"
                         >
                           Hapus pencarian
@@ -917,22 +1338,26 @@ export default function App() {
                                 </h3>
                                 <div className="flex items-center gap-1 text-xs text-gray-600 mt-1">
                                   <User className="w-3 h-3" />
-                                  <span className="truncate">{folder.ownerName}</span>
+                                  <span className="truncate">
+                                    {folder.ownerName}
+                                  </span>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  {new Date(folder.uploadDate).toLocaleDateString('id-ID', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
+                                  {new Date(
+                                    folder.uploadDate
+                                  ).toLocaleDateString("id-ID", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
                                   })}
                                 </p>
                               </div>
                             </div>
                             <Lock className="w-5 h-5 text-gray-400 flex-shrink-0" />
                           </div>
-                          
+
                           <div className="flex justify-between items-center text-sm text-gray-600 mb-2">
                             <span>{folder.fileCount} file</span>
                             <span>{formatFileSize(folder.totalSize)}</span>
@@ -940,7 +1365,9 @@ export default function App() {
 
                           <div className="flex items-center gap-2 text-xs text-orange-600 mb-4 bg-orange-50 px-3 py-2 rounded">
                             <Clock className="w-4 h-4" />
-                            <span>Tersisa {getRemainingDays(folder.uploadDate)} hari</span>
+                            <span>
+                              Tersisa {getRemainingDays(folder.uploadDate)} hari
+                            </span>
                           </div>
 
                           <div className="flex gap-2">
@@ -979,10 +1406,13 @@ export default function App() {
                         </h2>
                         <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                           <User className="w-4 h-4" />
-                          <span>Pemilik: <strong>{selectedFolder.ownerName}</strong></span>
+                          <span>
+                            Pemilik: <strong>{selectedFolder.ownerName}</strong>
+                          </span>
                         </div>
                         <p className="text-sm text-gray-500">
-                          {selectedFolder.fileCount} file • {formatFileSize(selectedFolder.totalSize)}
+                          {selectedFolder.fileCount} file •{" "}
+                          {formatFileSize(selectedFolder.totalSize)}
                         </p>
                       </div>
                     </div>
@@ -1027,8 +1457,13 @@ export default function App() {
         </div>
 
         <div className="mt-8 text-center text-sm text-gray-500">
-          <p>⚠️ File tersimpan di Supabase Storage dan akan otomatis terhapus setelah 7 hari</p>
-          <p className="mt-2 text-xs">Pastikan Anda sudah mengunduh file sebelum masa berlaku habis</p>
+          <p>
+            ⚠️ File tersimpan di Supabase Storage dan akan otomatis terhapus
+            setelah 7 hari
+          </p>
+          <p className="mt-2 text-xs">
+            Pastikan Anda sudah mengunduh file sebelum masa berlaku habis
+          </p>
         </div>
       </div>
     </div>
