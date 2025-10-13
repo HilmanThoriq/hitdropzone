@@ -186,12 +186,66 @@ export default function App() {
   };
 
   const getFormattedDate = () => {
-  const now = new Date();
-  const day = String(now.getDate()).padStart(2, '0');
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const year = now.getFullYear();
-  return `${day}${month}${year}`; // 10122024
-};
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const year = now.getFullYear();
+    return `${day}${month}${year}`; // 10122024
+  };
+
+  // Sanitize filename untuk menghindari error upload ke Supabase
+  const sanitizeFileName = (fileName) => {
+    if (!fileName) return "unnamed_file";
+
+    // Pisahkan nama dan extension
+    const lastDotIndex = fileName.lastIndexOf(".");
+    const name =
+      lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName;
+    const ext = lastDotIndex !== -1 ? fileName.substring(lastDotIndex) : "";
+
+    // Replace karakter illegal dengan underscore (NO ESCAPE untuk [ dan ? di dalam character class)
+    const sanitizedName = name
+      .replace(/[[\]#%?&=+@!$'"`~<>|\\/:*]/g, "_") // ← FIX: Hapus backslash di [ dan ?
+      .replace(/\s+/g, "_") // Ganti spasi dengan underscore
+      .replace(/_+/g, "_") // Ganti multiple underscore jadi single
+      .replace(/^_+|_+$/g, ""); // Hapus underscore di awal/akhir
+
+    // Jika nama kosong setelah sanitize, gunakan timestamp
+    const finalName = sanitizedName || `file_${Date.now()}`;
+
+    return finalName + ext;
+  };
+
+  // Generate nama file ZIP dengan format: NamaFolder_NamaPemilik_JamMenitDetik_DDMMYYYY.zip
+  const getZipFileName = (folderName, ownerName) => {
+    const now = new Date();
+
+    // Format tanggal: DDMMYYYY
+    const day = String(now.getDate()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const year = now.getFullYear();
+    const dateStr = `${day}${month}${year}`;
+
+    // Format waktu: JamMenitDetik (HHMMSS)
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const seconds = String(now.getSeconds()).padStart(2, "0");
+    const timeStr = `${hours}${minutes}${seconds}`;
+
+    // Sanitize folder name dan owner name
+    const sanitizedFolder = folderName
+      .replace(/[^a-zA-Z0-9]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "");
+
+    const sanitizedOwner = ownerName
+      .replace(/[^a-zA-Z0-9]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "");
+
+    // Format: NamaFolder_NamaPemilik_HHMMSS_DDMMYYYY.zip
+    return `${sanitizedFolder}_${sanitizedOwner}_${timeStr}_${dateStr}.zip`;
+  };
 
   const generateQRCode = async (
     folderId,
@@ -224,26 +278,30 @@ export default function App() {
 
   const createDownloadableZipLink = async (folderData, uploadedFilesData) => {
     try {
+      // Jika hanya 1 file, return direct download link (tidak perlu ZIP)
+      if (uploadedFilesData.length === 1) {
+        return uploadedFilesData[0].downloadURL;
+      }
+
+      // Jika lebih dari 1 file, buat ZIP
       const zip = new JSZip();
 
-      // Fetch semua file dari Supabase dan masukkan ke ZIP
       for (const file of uploadedFilesData) {
         const response = await fetch(file.downloadURL);
         const blob = await response.blob();
         zip.file(file.name, blob);
       }
 
-      // Generate ZIP
       const zipBlob = await zip.generateAsync({
         type: "blob",
         compression: "DEFLATE",
         compressionOptions: { level: 6 },
       });
 
-      // Upload ZIP ke Supabase sebagai file permanen
-      const zipFileName = `${folderData.folderId}/DOWNLOAD_${
-        folderData.folderName
-      }_${Date.now()}.zip`;
+      const zipFileName = `${folderData.folderId}/${getZipFileName(
+        folderData.folderName,
+        folderData.ownerName
+      )}`;
 
       const { error } = await supabase.storage
         .from("folders")
@@ -255,7 +313,6 @@ export default function App() {
 
       if (error) throw error;
 
-      // Get public URL untuk ZIP
       const { data: urlData } = supabase.storage
         .from("folders")
         .getPublicUrl(zipFileName);
@@ -267,69 +324,69 @@ export default function App() {
     }
   };
 
-const downloadQRCode = (folderName, qrDataUrl) => {
-  if (!qrDataUrl || !folderName) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Data QR Code tidak lengkap',
-      confirmButtonColor: '#EF4444',
-      customClass: {
-        confirmButton: 'swal-button-visible'
-      }
-    });
-    return;
-  }
-
-  try {
-    const dateStr = getFormattedDate(); // 10122024
-    const sanitizedName = folderName.replace(/[^a-zA-Z0-9]/g, '_');
-    const fileName = `QR_${sanitizedName}_${dateStr}.png`;
-    
-    const base64Data = qrDataUrl.split(',')[1];
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-    
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
+  const downloadQRCode = (folderName, qrDataUrl) => {
+    if (!qrDataUrl || !folderName) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Data QR Code tidak lengkap",
+        confirmButtonColor: "#EF4444",
+        customClass: {
+          confirmButton: "swal-button-visible",
+        },
+      });
+      return;
     }
-    
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'image/png' });
-    
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    
-    setTimeout(() => {
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    }, 100);
-    
-    Swal.fire({
-      icon: 'success',
-      title: 'QR Code Berhasil Diunduh!',
-      text: `File: ${fileName}`,
-      timer: 2000,
-      showConfirmButton: false
-    });
-  } catch (error) {
-    console.error('Error downloading QR:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Gagal Download',
-      text: 'Terjadi kesalahan saat mengunduh QR Code',
-      confirmButtonColor: '#EF4444',
-      customClass: {
-        confirmButton: 'swal-button-visible'
+
+    try {
+      const dateStr = getFormattedDate(); // 10122024
+      const sanitizedName = folderName.replace(/[^a-zA-Z0-9]/g, "_");
+      const fileName = `QR_${sanitizedName}_${dateStr}.png`;
+
+      const base64Data = qrDataUrl.split(",")[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
-    });
-  }
-};
+
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "image/png" });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+
+      Swal.fire({
+        icon: "success",
+        title: "QR Code Berhasil Diunduh!",
+        text: `File: ${fileName}`,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error("Error downloading QR:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Download",
+        text: "Terjadi kesalahan saat mengunduh QR Code",
+        confirmButtonColor: "#EF4444",
+        customClass: {
+          confirmButton: "swal-button-visible",
+        },
+      });
+    }
+  };
 
   const createZipWithPassword = async (folder) => {
     try {
@@ -363,25 +420,28 @@ const downloadQRCode = (folderName, qrDataUrl) => {
       const url = window.URL.createObjectURL(zipBlob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${folder.name}.zip`;
+      link.download = getZipFileName(folder.name, folder.ownerName);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
+      const zipFileName = getZipFileName(folder.name, folder.ownerName);
+
       Swal.fire({
         icon: "success",
         title: "ZIP Berhasil Dibuat!",
         html: `
-        <p>File ZIP telah diunduh.</p>
-        <p style="margin-top: 10px; padding: 10px; background: #FEF3C7; border-radius: 6px;">
-          <strong>📌 Password ZIP:</strong><br>
-          <code style="font-size: 18px; color: #DC2626;">${folder.passcode}</code>
-        </p>
-        <p style="font-size: 12px; color: #6B7280; margin-top: 10px;">
-          Gunakan password di atas untuk membuka file ZIP
-        </p>
-      `,
+          <p>File ZIP telah diunduh.</p>
+          <p style="margin-top: 10px; font-size: 12px; color: #6B7280;">
+            <strong>Nama file:</strong><br>
+            <code style="font-size: 11px; word-break: break-all;">${zipFileName}</code>
+          </p>
+          <p style="margin-top: 10px; padding: 10px; background: #DBEAFE; border-radius: 6px;">
+            ℹ️ File ZIP ini <strong>tidak memiliki password</strong><br>
+            <span style="font-size: 12px; color: #1E3A8A;">Semua file dapat langsung diekstrak</span>
+          </p>
+        `,
         confirmButtonColor: "#10B981",
         customClass: {
           confirmButton: "swal-button-visible",
@@ -574,8 +634,29 @@ const downloadQRCode = (folderName, qrDataUrl) => {
 
       for (let i = 0; i < uploadFiles.length; i++) {
         const file = uploadFiles[i];
-        const fileName = `${Date.now()}_${file.name}`;
-        const storagePath = `${folderId}/${fileName}`;
+        const sanitizedFileName = sanitizeFileName(file.name); // ← Sanitize
+        const existingNames = uploadedFiles.map((f) =>
+          f.storagePath.split("/").pop()
+        );
+        let counter = 1;
+        let finalFileName = sanitizedFileName;
+
+        // Jika duplicate, tambah counter
+        while (existingNames.includes(finalFileName)) {
+          const lastDotIndex = sanitizedFileName.lastIndexOf(".");
+          const name =
+            lastDotIndex !== -1
+              ? sanitizedFileName.substring(0, lastDotIndex)
+              : sanitizedFileName;
+          const ext =
+            lastDotIndex !== -1
+              ? sanitizedFileName.substring(lastDotIndex)
+              : "";
+          finalFileName = `${name}_${counter}${ext}`;
+          counter++;
+        }
+
+        const storagePath = `${folderId}/${finalFileName}`;
 
         const { error } = await supabase.storage
           .from("folders")
@@ -688,36 +769,52 @@ const downloadQRCode = (folderName, qrDataUrl) => {
             Swal.fire({
               title: "📱 QR Code Siap!",
               html: `
-                <div style="text-align: center;">
-                  <div style="background: #F0FDF4; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-                    <p style="margin: 0; color: #10B981; font-weight: 600;">✅ Scan = Auto Download ZIP!</p>
-                  </div>
-                  
-                  <p style="margin-bottom: 15px; color: #6B7280; font-size: 14px;">Scan QR Code untuk download otomatis</p>
-                  <img src="${qrDataURL}" style="width: 350px; height: 350px; margin: 0 auto; border: 3px solid #4F46E5; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15);">
-                  
-                  <div style="margin-top: 20px; padding: 15px; background: #EEF2FF; border-radius: 8px; border: 2px solid #C7D2FE;">
-                    <p style="margin: 0; font-size: 16px; font-weight: 600; color: #3730A3;">📁 ${folderName}</p>
-                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #4338CA;">👤 ${ownerName}</p>
-                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #6366F1;">📊 ${
-                      uploadedFiles.length
-                    } file • ${formatFileSize(totalSize)}</p>
-                  </div>
-
-                  <div style="margin-top: 15px; padding: 12px; background: #FFFBEB; border-radius: 8px; border: 2px solid #FDE68A;">
-                    <p style="margin: 0; font-size: 12px; color: #92400E; font-weight: 600;">💡 Cara Pakai:</p>
-                    <p style="margin: 5px 0 0 0; font-size: 11px; color: #78350F; text-align: left;">
-                      1. Simpan/bagikan QR Code ini<br>
-                      2. Scan dengan kamera HP<br>
-                      3. ZIP otomatis terdownload!
+                  <div style="text-align: center;">
+                    <div style="background: #F0FDF4; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                      <p style="margin: 0; color: #10B981; font-weight: 600;">
+                        ${
+                          uploadedFiles.length === 1
+                            ? "✅ Scan = Auto Download File!"
+                            : "✅ Scan = Auto Download ZIP!"
+                        }
+                      </p>
+                    </div>
+                    
+                    <p style="margin-bottom: 15px; color: #6B7280; font-size: 14px;">
+                      ${
+                        uploadedFiles.length === 1
+                          ? "Scan QR Code untuk download file langsung"
+                          : "Scan QR Code untuk download semua file (ZIP)"
+                      }
                     </p>
-                  </div>
+                    <img src="${qrDataURL}" style="width: 350px; height: 350px; margin: 0 auto; border: 3px solid #4F46E5; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15);">
+                    
+                    <div style="margin-top: 20px; padding: 15px; background: #EEF2FF; border-radius: 8px; border: 2px solid #C7D2FE;">
+                      <p style="margin: 0; font-size: 16px; font-weight: 600; color: #3730A3;">📁 ${folderName}</p>
+                      <p style="margin: 8px 0 0 0; font-size: 13px; color: #4338CA;">👤 ${ownerName}</p>
+                      <p style="margin: 8px 0 0 0; font-size: 12px; color: #6366F1;">
+                        📊 ${uploadedFiles.length} file${
+                uploadedFiles.length > 1 ? "s" : ""
+              } • ${formatFileSize(totalSize)}
+                      </p>
+                    </div>
 
-                  <div style="margin-top: 12px; font-size: 11px; color: #6B7280;">
-                    <p style="margin: 3px 0;">⏰ File online tersedia selama 7 hari</p>
+                    <div style="margin-top: 15px; padding: 12px; background: #FFFBEB; border-radius: 8px; border: 2px solid #FDE68A;">
+                      <p style="margin: 0; font-size: 12px; color: #92400E; font-weight: 600;">💡 Cara Pakai:</p>
+                      <p style="margin: 5px 0 0 0; font-size: 11px; color: #78350F; text-align: left;">
+                        1. Simpan/bagikan QR Code ini<br>
+                        2. Scan dengan kamera HP<br>
+                        3. ${
+                          uploadedFiles.length === 1 ? "File" : "ZIP"
+                        } otomatis terdownload!
+                      </p>
+                    </div>
+
+                    <div style="margin-top: 12px; font-size: 11px; color: #6B7280;">
+                      <p style="margin: 3px 0;">⏰ File online tersedia selama 7 hari</p>
+                    </div>
                   </div>
-                </div>
-              `,
+                `,
               width: 550,
               showCancelButton: true,
               confirmButtonText: "💾 Download QR Code",
@@ -862,6 +959,13 @@ const downloadQRCode = (folderName, qrDataUrl) => {
   };
 
   const downloadAllFiles = async (folder) => {
+    // Jika hanya 1 file, langsung download tanpa popup
+    if (folder.files.length === 1) {
+      await downloadFile(folder.files[0]);
+      return;
+    }
+
+    // Jika lebih dari 1 file, tampilkan pilihan
     await Swal.fire({
       title: "Pilih Metode Download",
       html: `
@@ -869,7 +973,7 @@ const downloadQRCode = (folderName, qrDataUrl) => {
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <button id="zip-btn" class="download-option-btn" style="padding: 15px; background: #4F46E5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
           📦 Download sebagai ZIP<br>
-          <small style="font-weight: 400; opacity: 0.9;">Semua file dalam 1 file ZIP (dengan password)</small>
+          <small style="font-weight: 400; opacity: 0.9;">Semua file dalam 1 file ZIP</small>
         </button>
         <button id="one-by-one-btn" class="download-option-btn" style="padding: 15px; background: #10B981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
           📥 Download Satu per Satu<br>
@@ -904,6 +1008,17 @@ const downloadQRCode = (folderName, qrDataUrl) => {
             for (let i = 0; i < folder.files.length; i++) {
               await new Promise((resolve) => setTimeout(resolve, i * 1000));
               await downloadFile(folder.files[i]);
+
+              // Show progress setiap file
+              if (i < folder.files.length - 1) {
+                Swal.fire({
+                  title: `Download Progress`,
+                  text: `${i + 1}/${folder.files.length} file terdownload`,
+                  icon: "info",
+                  timer: 800,
+                  showConfirmButton: false,
+                });
+              }
             }
           });
       },
@@ -1420,7 +1535,9 @@ const downloadQRCode = (folderName, qrDataUrl) => {
                       onClick={() => downloadAllFiles(selectedFolder)}
                       className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap"
                     >
-                      Download Semua
+                      {selectedFolder.fileCount === 1
+                        ? "📥 Download File"
+                        : "📦 Download Semua"}
                     </button>
                   </div>
 
