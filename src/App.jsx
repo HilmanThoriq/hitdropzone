@@ -67,10 +67,54 @@ export default function App() {
     deleteExpiredFolders();
   }, []);
 
+  // Handle shared link setelah folders loaded
   useEffect(() => {
-    loadFolders();
-    deleteExpiredFolders();
-  }, []);
+    const urlParams = new URLSearchParams(window.location.search);
+    const folderId = urlParams.get("folder");
+    const pin = urlParams.get("pin");
+
+    if (folderId && pin && folders.length > 0) {
+      // Auto-switch ke tab download
+      setActiveTab("download");
+
+      // Find folder by ID
+      const folder = folders.find((f) => f.id === folderId);
+
+      if (folder && folder.passcode === pin) {
+        setSelectedFolder(folder);
+        Swal.fire({
+          icon: "success",
+          title: "Folder Terbuka! 🎉",
+          text: `Selamat datang di folder "${folder.name}"`,
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } else if (folder && folder.passcode !== pin) {
+        Swal.fire({
+          icon: "error",
+          title: "PIN Salah",
+          text: "Link valid tapi PIN tidak sesuai",
+          confirmButtonColor: "#EF4444",
+          customClass: {
+            confirmButton: "swal-button-visible",
+          },
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Folder Tidak Ditemukan",
+          text: "Link sudah kadaluarsa atau tidak valid",
+          confirmButtonColor: "#EF4444",
+          customClass: {
+            confirmButton: "swal-button-visible",
+          },
+        });
+      }
+
+      // Clean URL setelah proses
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [folders]); // Trigger saat folders berubah
 
   const loadFolders = async () => {
     try {
@@ -245,6 +289,104 @@ export default function App() {
 
     // Format: NamaFolder_NamaPemilik_HHMMSS_DDMMYYYY.zip
     return `${sanitizedFolder}_${sanitizedOwner}_${timeStr}_${dateStr}.zip`;
+  };
+
+  const generateShareLink = (folder) => {
+    // Generate link dengan format: domain.com?folder=ID&pin=PIN
+    const baseUrl = window.location.origin;
+    const shareUrl = `${baseUrl}?folder=${folder.id}&pin=${folder.passcode}`;
+    return shareUrl;
+  };
+
+  const copyShareLink = async (folder) => {
+    const shareLink = generateShareLink(folder);
+
+    try {
+      // Copy to clipboard
+      await navigator.clipboard.writeText(shareLink);
+
+      Swal.fire({
+        icon: "success",
+        title: "Link Berhasil Disalin!",
+        html: `
+          <div style="text-align: left;">
+            <p style="margin-bottom: 10px;">Link telah disalin ke clipboard:</p>
+            <div style="padding: 12px; background: #F3F4F6; border-radius: 6px; word-break: break-all; font-family: monospace; font-size: 12px;">
+              ${shareLink}
+            </div>
+            <div style="margin-top: 15px; padding: 12px; background: #DBEAFE; border-radius: 6px;">
+              <p style="margin: 0; font-size: 13px; color: #1E3A8A; font-weight: 600;">
+                ✅ Link ini langsung membuka folder!
+              </p>
+              <p style="margin: 5px 0 0 0; font-size: 11px; color: #1E40AF;">
+                Penerima tidak perlu input PIN lagi
+              </p>
+            </div>
+            <p style="margin-top: 12px; font-size: 13px; color: #6B7280;">
+              📤 Bagikan link ini untuk akses langsung ke folder
+            </p>
+          </div>
+      `,
+        confirmButtonColor: "#10B981",
+        customClass: {
+          confirmButton: "swal-button-visible",
+        },
+      });
+    } catch {
+      // Fallback jika clipboard API tidak support
+      Swal.fire({
+        icon: "info",
+        title: "Link Berbagi",
+        html: `
+          <div style="text-align: left;">
+            <p style="margin-bottom: 10px;">Salin link di bawah ini:</p>
+            <textarea 
+              id="share-link-text" 
+              readonly 
+              style="width: 100%; padding: 12px; background: #F3F4F6; border: 1px solid #D1D5DB; border-radius: 6px; font-family: monospace; font-size: 12px; resize: none;"
+              rows="3"
+            >${shareLink}</textarea>
+            <div style="margin-top: 12px; padding: 12px; background: #DBEAFE; border-radius: 6px;">
+              <p style="margin: 0; font-size: 13px; color: #1E3A8A; font-weight: 600;">
+                ✅ Link ini langsung membuka folder!
+              </p>
+              <p style="margin: 5px 0 0 0; font-size: 11px; color: #1E40AF;">
+                Penerima tidak perlu input PIN lagi
+              </p>
+            </div>
+            <button 
+              id="copy-btn" 
+              style="margin-top: 10px; padding: 8px 16px; background: #4F46E5; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;"
+            >
+              📋 Salin Link
+            </button>
+          </div>
+      `,
+        showConfirmButton: true,
+        confirmButtonText: "Tutup",
+        confirmButtonColor: "#6B7280",
+        customClass: {
+          confirmButton: "swal-button-visible",
+        },
+        didOpen: () => {
+          const textarea = document.getElementById("share-link-text");
+          const copyBtn = document.getElementById("copy-btn");
+
+          textarea.select();
+
+          copyBtn.addEventListener("click", () => {
+            textarea.select();
+            document.execCommand("copy");
+            copyBtn.textContent = "✅ Tersalin!";
+            copyBtn.style.background = "#10B981";
+            setTimeout(() => {
+              copyBtn.textContent = "📋 Salin Link";
+              copyBtn.style.background = "#4F46E5";
+            }, 2000);
+          });
+        },
+      });
+    }
   };
 
   const generateQRCode = async (
@@ -658,15 +800,15 @@ export default function App() {
 
         const storagePath = `${folderId}/${finalFileName}`;
 
-        const { error } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from("folders")
           .upload(storagePath, file, {
             cacheControl: "3600",
             upsert: false,
           });
 
-        if (error) {
-          throw new Error(`Gagal upload ${file.name}: ${error.message}`);
+        if (uploadError) {
+          throw new Error(`Gagal upload ${file.name}: ${uploadError.message}`);
         }
 
         const { data: urlData } = supabase.storage
@@ -698,10 +840,9 @@ export default function App() {
         expiryDate: Date.now() + 7 * 24 * 60 * 60 * 1000,
       };
 
-      await addDoc(collection(db, "folders"), folderData);
-
-      // Simpan folder ID untuk QR
-      const savedFolderId = folderId;
+      // Save ke Firestore dan dapatkan ID yang persistent
+      const docRef = await addDoc(collection(db, "folders"), folderData);
+      const savedFolderId = docRef.id; // ID unik dari Firestore!
 
       Swal.close(); // Tutup loading dulu
 
@@ -712,6 +853,12 @@ export default function App() {
         html: `
           <p>Folder "${folderName}" berhasil diunggah dengan ${uploadedFiles.length} file</p>
           <p style="font-size: 14px; color: #6B7280; margin-top: 10px;">File akan otomatis terhapus dalam 7 hari</p>
+          <div style="margin: 15px 0; padding: 12px; background: #EEF2FF; border-radius: 8px; border: 2px solid #C7D2FE;">
+            <p style="margin: 0; font-size: 13px; color: #4338CA; font-weight: 600;">🔗 Link Berbagi Aktif!</p>
+            <p style="margin: 5px 0 0 0; font-size: 11px; color: #6366F1;">
+              Link sudah bisa dibagikan sekarang
+            </p>
+          </div>
           <hr style="margin: 20px 0; border: none; border-top: 1px solid #E5E7EB;">
           <p style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">📱 Buat QR Code untuk berbagi?</p>
           <p style="font-size: 12px; color: #6B7280;">Scan QR = Otomatis download ZIP!</p>
@@ -1491,6 +1638,25 @@ export default function App() {
                               className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-md transition-colors text-sm font-medium"
                             >
                               Buka Folder
+                            </button>
+                            <button
+                              onClick={() => copyShareLink(folder)}
+                              className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-md transition-colors"
+                              title="Salin link berbagi"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                                />
+                              </svg>
                             </button>
                             <button
                               onClick={() => deleteFolder(folder)}
