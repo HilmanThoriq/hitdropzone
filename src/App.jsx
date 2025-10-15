@@ -299,6 +299,57 @@ export default function App() {
   };
 
   const copyShareLink = async (folder) => {
+    // Minta PIN dulu sebelum copy link
+    const { value: enteredPin } = await Swal.fire({
+      title: "Verifikasi PIN",
+      html: `
+      <p style="margin-bottom: 15px;">Masukkan PIN untuk mendapatkan link berbagi folder "<strong>${folder.name}</strong>"</p>
+      <p style="font-size: 12px; color: #DC2626; margin-bottom: 10px;">⚠️ Link ini berisi PIN, jaga kerahasiaannya!</p>
+    `,
+      input: "number",
+      inputLabel: "Masukkan PIN",
+      inputPlaceholder: "PIN folder",
+      inputAttributes: {
+        maxlength: 10,
+        autocomplete: "off",
+      },
+      showCancelButton: true,
+      confirmButtonText: "Dapatkan Link",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#4F46E5",
+      cancelButtonColor: "#6B7280",
+      customClass: {
+        confirmButton: "swal-button-visible",
+        cancelButton: "swal-button-visible",
+      },
+      inputValidator: (value) => {
+        if (!value) {
+          return "PIN tidak boleh kosong!";
+        }
+        if (!/^\d+$/.test(value)) {
+          return "PIN hanya boleh berisi angka!";
+        }
+      },
+    });
+
+    // Jika user cancel
+    if (!enteredPin) return;
+
+    // Cek PIN
+    if (enteredPin !== folder.passcode) {
+      Swal.fire({
+        icon: "error",
+        title: "PIN Salah",
+        text: "PIN yang Anda masukkan tidak sesuai",
+        confirmButtonColor: "#EF4444",
+        customClass: {
+          confirmButton: "swal-button-visible",
+        },
+      });
+      return;
+    }
+
+    // PIN benar, generate dan copy link
     const shareLink = generateShareLink(folder);
 
     try {
@@ -307,26 +358,30 @@ export default function App() {
 
       Swal.fire({
         icon: "success",
-        title: "Link Berhasil Disalin!",
+        title: "Link Berhasil Disalin! 🎉",
         html: `
-          <div style="text-align: left;">
-            <p style="margin-bottom: 10px;">Link telah disalin ke clipboard:</p>
-            <div style="padding: 12px; background: #F3F4F6; border-radius: 6px; word-break: break-all; font-family: monospace; font-size: 12px;">
-              ${shareLink}
-            </div>
-            <div style="margin-top: 15px; padding: 12px; background: #DBEAFE; border-radius: 6px;">
-              <p style="margin: 0; font-size: 13px; color: #1E3A8A; font-weight: 600;">
-                ✅ Link ini langsung membuka folder!
-              </p>
-              <p style="margin: 5px 0 0 0; font-size: 11px; color: #1E40AF;">
-                Penerima tidak perlu input PIN lagi
-              </p>
-            </div>
-            <p style="margin-top: 12px; font-size: 13px; color: #6B7280;">
-              📤 Bagikan link ini untuk akses langsung ke folder
+        <div style="text-align: left;">
+          <p style="margin-bottom: 10px; font-size: 14px;">Link telah disalin ke clipboard:</p>
+          <div style="padding: 12px; background: #F3F4F6; border-radius: 6px; word-break: break-all; font-family: monospace; font-size: 11px; border: 1px solid #D1D5DB;">
+            ${shareLink}
+          </div>
+          
+          <div style="margin-top: 15px; padding: 12px; background: #FEF3C7; border-radius: 6px; border: 1px solid #FDE68A;">
+            <p style="margin: 0; font-size: 12px; color: #92400E; font-weight: 600;">⚠️ PERINGATAN KEAMANAN</p>
+            <p style="margin: 5px 0 0 0; font-size: 11px; color: #78350F;">
+              • Link ini berisi PIN folder<br>
+              • Siapa saja yang punya link bisa akses folder<br>
+              • Bagikan hanya ke orang terpercaya<br>
+              • Jangan posting di media sosial publik
             </p>
           </div>
+
+          <p style="margin-top: 12px; font-size: 12px; color: #6B7280; text-align: center;">
+            📤 Bagikan link via WA/Email/DM pribadi
+          </p>
+        </div>
       `,
+        width: 550,
         confirmButtonColor: "#10B981",
         customClass: {
           confirmButton: "swal-button-visible",
@@ -338,30 +393,28 @@ export default function App() {
         icon: "info",
         title: "Link Berbagi",
         html: `
-          <div style="text-align: left;">
-            <p style="margin-bottom: 10px;">Salin link di bawah ini:</p>
-            <textarea 
-              id="share-link-text" 
-              readonly 
-              style="width: 100%; padding: 12px; background: #F3F4F6; border: 1px solid #D1D5DB; border-radius: 6px; font-family: monospace; font-size: 12px; resize: none;"
-              rows="3"
-            >${shareLink}</textarea>
-            <div style="margin-top: 12px; padding: 12px; background: #DBEAFE; border-radius: 6px;">
-              <p style="margin: 0; font-size: 13px; color: #1E3A8A; font-weight: 600;">
-                ✅ Link ini langsung membuka folder!
-              </p>
-              <p style="margin: 5px 0 0 0; font-size: 11px; color: #1E40AF;">
-                Penerima tidak perlu input PIN lagi
-              </p>
-            </div>
-            <button 
-              id="copy-btn" 
-              style="margin-top: 10px; padding: 8px 16px; background: #4F46E5; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;"
-            >
-              📋 Salin Link
-            </button>
+        <div style="text-align: left;">
+          <p style="margin-bottom: 10px; font-size: 14px;">Salin link di bawah ini:</p>
+          <textarea 
+            id="share-link-text" 
+            readonly 
+            style="width: 100%; padding: 12px; background: #F3F4F6; border: 1px solid #D1D5DB; border-radius: 6px; font-family: monospace; font-size: 11px; resize: none;"
+            rows="3"
+          >${shareLink}</textarea>
+          <button 
+            id="copy-btn" 
+            style="margin-top: 10px; padding: 8px 16px; background: #4F46E5; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; width: 100%;"
+          >
+            📋 Salin Link
+          </button>
+          
+          <div style="margin-top: 15px; padding: 12px; background: #FEF3C7; border-radius: 6px; border: 1px solid #FDE68A;">
+            <p style="margin: 0; font-size: 11px; color: #92400E; font-weight: 600;">⚠️ Link ini berisi PIN</p>
+            <p style="margin: 5px 0 0 0; font-size: 10px; color: #78350F;">Bagikan hanya ke orang terpercaya!</p>
           </div>
+        </div>
       `,
+        width: 500,
         showConfirmButton: true,
         confirmButtonText: "Tutup",
         confirmButtonColor: "#6B7280",
@@ -377,10 +430,10 @@ export default function App() {
           copyBtn.addEventListener("click", () => {
             textarea.select();
             document.execCommand("copy");
-            copyBtn.textContent = "✅ Tersalin!";
+            copyBtn.innerHTML = "✅ Tersalin!";
             copyBtn.style.background = "#10B981";
             setTimeout(() => {
-              copyBtn.textContent = "📋 Salin Link";
+              copyBtn.innerHTML = "📋 Salin Link";
               copyBtn.style.background = "#4F46E5";
             }, 2000);
           });
@@ -910,7 +963,10 @@ export default function App() {
           );
 
           if (qrDataURL) {
-            Swal.close();
+            await Swal.close();
+
+            // Sedikit jeda agar animasi penutupan benar-benar selesai
+            await new Promise((resolve) => setTimeout(resolve, 150));
 
             // Tampilkan QR Code
             Swal.fire({
@@ -934,7 +990,13 @@ export default function App() {
                           : "Scan QR Code untuk download semua file (ZIP)"
                       }
                     </p>
-                    <img src="${qrDataURL}" style="width: 350px; height: 350px; margin: 0 auto; border: 3px solid #4F46E5; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15);">
+                    <div style="position: relative; width: 350px; height: 350px; margin: 0 auto;">
+                  <img 
+                    src="${qrDataURL}" 
+                    style="width: 100%; height: 100%; border: 3px solid #4F46E5; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); display: block;"
+                    alt="QR Code"
+                  >
+                </div>
                     
                     <div style="margin-top: 20px; padding: 15px; background: #EEF2FF; border-radius: 8px; border: 2px solid #C7D2FE;">
                       <p style="margin: 0; font-size: 16px; font-weight: 600; color: #3730A3;">📁 ${folderName}</p>
@@ -978,6 +1040,7 @@ export default function App() {
               }
             });
           }
+
         } catch (error) {
           console.error("Error creating QR:", error);
           Swal.fire({
