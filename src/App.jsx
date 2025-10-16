@@ -29,20 +29,18 @@ import {
 import { createClient } from "@supabase/supabase-js";
 
 // ========== FIREBASE CONFIG (untuk Firestore & Hosting) ==========
+// Ganti hardcoded config dengan env variables
 const firebaseConfig = {
-  apiKey: "AIzaSyDqLSahUVAotf62tqZK9HXomJTLsL0vlxA",
-  authDomain: "hitdropzone-3ab8a.firebaseapp.com",
-  projectId: "hitdropzone-3ab8a",
-  storageBucket: "hitdropzone-3ab8a.firebasestorage.app",
-  messagingSenderId: "883532943273",
-  appId: "1:883532943273:web:66ac5cdfbdbc47405a7eb8",
-  measurementId: "G-X0Z6X1KZY8",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// ========== SUPABASE CONFIG (untuk Storage) ==========
-const supabaseUrl = "https://cupidqvelyeqjdcbsoze.supabase.co";
-const supabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1cGlkcXZlbHllcWpkY2Jzb3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5Nzc1MjAsImV4cCI6MjA3NTU1MzUyMH0.lZEruf8FGZGH9fORHriOJuRyxgRV2FnisG2d1wFVKnk";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Initialize Firebase & Supabase
 const app = initializeApp(firebaseConfig);
