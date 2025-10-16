@@ -4,7 +4,7 @@
 
 ### *Lightning-Fast File Transit Platform*
 
-[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/yourusername/hitdropzone/releases)
+[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/HilmanThoriq/hitdropzone/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-Hosting-FFCA28?logo=firebase)](https://firebase.google.com/)
@@ -12,7 +12,7 @@
 
 **Share files instantly without registration. No friction, just files.** 🚀
 
-[🌐 Live Demo](https://hitdropzone.web.app) • [📖 Documentation](#features) • [🐛 Report Bug](https://github.com/hillmanthrq/hitdropzone/issues) • [💡 Request Feature](https://github.com/hillmanthrq/hitdropzone/issues)
+[🌐 Live Demo](https://hitdropzone.web.app) • [📖 Documentation](#features) • [🐛 Report Bug](https://github.com/HilmanThoriq/hitdropzone/issues) • [💡 Request Feature](https://github.com/HilmanThoriq/hitdropzone/issues)
 
 <img src="https://via.placeholder.com/800x400/4F46E5/FFFFFF?text=HitDropZone+Screenshot" alt="HitDropZone Interface" width="100%"/>
 
