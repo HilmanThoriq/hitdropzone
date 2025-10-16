@@ -12,7 +12,7 @@
 
 **Share files instantly without registration. No friction, just files.** 🚀
 
-[🌐 Live Demo](https://hitdropzone.web.app) • [📖 Documentation](#features) • [🐛 Report Bug](https://github.com/yourusername/hitdropzone/issues) • [💡 Request Feature](https://github.com/yourusername/hitdropzone/issues)
+[🌐 Live Demo](https://hitdropzone.web.app) • [📖 Documentation](#features) • [🐛 Report Bug](https://github.com/hillmanthrq/hitdropzone/issues) • [💡 Request Feature](https://github.com/hillmanthrq/hitdropzone/issues)
 
 <img src="https://via.placeholder.com/800x400/4F46E5/FFFFFF?text=HitDropZone+Screenshot" alt="HitDropZone Interface" width="100%"/>
 
@@ -61,7 +61,7 @@ npm >= 9.0.0
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/hitdropzone.git
+git clone https://github.com/HilmanThoriq/hitdropzone.git
 cd hitdropzone
 ```
 
@@ -199,52 +199,20 @@ hitdropzone/
 
 - [ ] ZIP files do not support password protection (browser limitation)
 - [ ] Large file uploads may timeout on slow connections
-- [ ] QR codes are PNG format (JPEG planned for v1.2.0)
+- [ ] QR codes are PNG format 
+
 
 ---
 
-## 🛣️ Roadmap
-
-### v1.2.0 (Next Release)
-- [ ] PWA support (installable app)
-- [ ] Logo in QR codes
-- [ ] Dark mode toggle
-- [ ] File preview (images/PDFs)
-- [ ] Drag & drop upload
-
-### v1.3.0 (Future)
-- [ ] Push notifications (expiry reminders)
-- [ ] Background sync
-- [ ] Analytics dashboard
-- [ ] Custom expiry time (1-7 days)
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
 
 ## 👨‍💻 Author
 
 **Hilman Thoriq**
 
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your Profile](https://linkedin.com/in/yourprofile)
-- Portfolio: [yourwebsite.com](https://yourwebsite.com)
+- GitHub: [@HilmanThoriq](https://github.com/HilmanThoriq)  
+- Instagram: [@hillmanthrq](https://instagram.com/hillmanthrq)  
+- LinkedIn: [Hilman Thoriq](https://linkedin.com/in/hilman-thoriq)
+- Portfolio: [hilmanthq.com](https://hilmanthq.com)
 
 ---
 
@@ -261,9 +229,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Stats
 
-![GitHub stars](https://img.shields.io/github/stars/yourusername/hitdropzone?style=social)
-![GitHub forks](https://img.shields.io/github/forks/yourusername/hitdropzone?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/yourusername/hitdropzone?style=social)
+![GitHub stars](https://img.shields.io/github/stars/HilmanThoriq/hitdropzone?style=social)
+![GitHub forks](https://img.shields.io/github/forks/HilmanThoriq/hitdropzone?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/HilmanThoriq/hitdropzone?style=social)
 
 ---
 
@@ -271,7 +239,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### ⭐ Star this repo if you find it useful!
 
-Made with ❤️ by [Hilman Thoriq](https://github.com/yourusername)
+Made with ❤️ by [Hilman Thoriq](https://github.com/HilmanThoriq)
 
 </div>
 ```
