@@ -14,11 +14,19 @@
     <meta property="og:url" content="https://hitdropzone.vercel.app" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="google-site-verification" content="xWzYZJ6ALZ2NyOJnuUSTjx5Dc2gQDTDni91rHgUel6w" />
-    
+
     <title>HIT Drop Zone | Your Personal Transfer Zone</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
+  <script>
+    if (location.hostname.includes("web.app")) {
+      document.write('<meta name="robots" content="noindex,follow">');
+      document.write('<link rel="canonical" href="https://hitdropzone.vercel.app/">');
+    } else {
+      document.write('<link rel="canonical" href="https://hitdropzone.vercel.app/">');
+    }
+  </script>
 </html>
