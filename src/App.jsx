@@ -11,6 +11,10 @@ import {
   Clock,
   User,
   AlertTriangle,
+  RefreshCw,
+  ArrowLeft,
+  QrCode,
+  Linkedin,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import QRCode from "qrcode";
@@ -27,16 +31,17 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { createClient } from "@supabase/supabase-js";
+import hitLogo from "./assets/hit-logo.png"
+
 
 // ========== FIREBASE CONFIG (untuk Firestore & Hosting) ==========
-// Ganti hardcoded config dengan env variables
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -59,6 +64,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [pinError, setPinError] = useState("");
+  const [showContact, setShowContact] = useState(false);
 
   useEffect(() => {
     loadFolders();
@@ -72,10 +78,7 @@ export default function App() {
     const pin = urlParams.get("pin");
 
     if (folderId && pin && folders.length > 0) {
-      // Auto-switch ke tab download
       setActiveTab("download");
-
-      // Find folder by ID
       const folder = folders.find((f) => f.id === folderId);
 
       if (folder && folder.passcode === pin) {
@@ -109,10 +112,9 @@ export default function App() {
         });
       }
 
-      // Clean URL setelah proses
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [folders]); // Trigger saat folders berubah
+  }, [folders]);
 
   const loadFolders = async () => {
     try {
@@ -232,49 +234,41 @@ export default function App() {
     const day = String(now.getDate()).padStart(2, "0");
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const year = now.getFullYear();
-    return `${day}${month}${year}`; // 10122024
+    return `${day}${month}${year}`;
   };
 
-  // Sanitize filename untuk menghindari error upload ke Supabase
   const sanitizeFileName = (fileName) => {
     if (!fileName) return "unnamed_file";
 
-    // Pisahkan nama dan extension
     const lastDotIndex = fileName.lastIndexOf(".");
     const name =
       lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName;
     const ext = lastDotIndex !== -1 ? fileName.substring(lastDotIndex) : "";
 
-    // Replace karakter illegal dengan underscore (NO ESCAPE untuk [ dan ? di dalam character class)
     const sanitizedName = name
-      .replace(/[[\]#%?&=+@!$'"`~<>|\\/:*]/g, "_") // ← FIX: Hapus backslash di [ dan ?
-      .replace(/\s+/g, "_") // Ganti spasi dengan underscore
-      .replace(/_+/g, "_") // Ganti multiple underscore jadi single
-      .replace(/^_+|_+$/g, ""); // Hapus underscore di awal/akhir
+      .replace(/[[\]#%?&=+@!$'"`~<>|\\/:*]/g, "_")
+      .replace(/\s+/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "");
 
-    // Jika nama kosong setelah sanitize, gunakan timestamp
     const finalName = sanitizedName || `file_${Date.now()}`;
 
     return finalName + ext;
   };
 
-  // Generate nama file ZIP dengan format: NamaFolder_NamaPemilik_JamMenitDetik_DDMMYYYY.zip
   const getZipFileName = (folderName, ownerName) => {
     const now = new Date();
 
-    // Format tanggal: DDMMYYYY
     const day = String(now.getDate()).padStart(2, "0");
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const year = now.getFullYear();
     const dateStr = `${day}${month}${year}`;
 
-    // Format waktu: JamMenitDetik (HHMMSS)
     const hours = String(now.getHours()).padStart(2, "0");
     const minutes = String(now.getMinutes()).padStart(2, "0");
     const seconds = String(now.getSeconds()).padStart(2, "0");
     const timeStr = `${hours}${minutes}${seconds}`;
 
-    // Sanitize folder name dan owner name
     const sanitizedFolder = folderName
       .replace(/[^a-zA-Z0-9]/g, "_")
       .replace(/_+/g, "_")
@@ -285,19 +279,16 @@ export default function App() {
       .replace(/_+/g, "_")
       .replace(/^_+|_+$/g, "");
 
-    // Format: NamaFolder_NamaPemilik_HHMMSS_DDMMYYYY.zip
     return `${sanitizedFolder}_${sanitizedOwner}_${timeStr}_${dateStr}.zip`;
   };
 
   const generateShareLink = (folder) => {
-    // Generate link dengan format: domain.com?folder=ID&pin=PIN
     const baseUrl = window.location.origin;
     const shareUrl = `${baseUrl}?folder=${folder.id}&pin=${folder.passcode}`;
     return shareUrl;
   };
 
   const copyShareLink = async (folder) => {
-    // Minta PIN dulu sebelum copy link
     const { value: enteredPin } = await Swal.fire({
       title: "Verifikasi PIN",
       html: `
@@ -330,10 +321,8 @@ export default function App() {
       },
     });
 
-    // Jika user cancel
     if (!enteredPin) return;
 
-    // Cek PIN
     if (enteredPin !== folder.passcode) {
       Swal.fire({
         icon: "error",
@@ -347,11 +336,9 @@ export default function App() {
       return;
     }
 
-    // PIN benar, generate dan copy link
     const shareLink = generateShareLink(folder);
 
     try {
-      // Copy to clipboard
       await navigator.clipboard.writeText(shareLink);
 
       Swal.fire({
@@ -386,7 +373,6 @@ export default function App() {
         },
       });
     } catch {
-      // Fallback jika clipboard API tidak support
       Swal.fire({
         icon: "info",
         title: "Link Berbagi",
@@ -447,10 +433,8 @@ export default function App() {
     zipDownloadUrl
   ) => {
     try {
-      // QR Code langsung ke download ZIP
-      const qrData = zipDownloadUrl; // Direct download link!
+      const qrData = zipDownloadUrl;
 
-      // Generate QR code sebagai JPEG
       const qrDataURL = await QRCode.toDataURL(qrData, {
         width: 400,
         margin: 2,
@@ -471,12 +455,10 @@ export default function App() {
 
   const createDownloadableZipLink = async (folderData, uploadedFilesData) => {
     try {
-      // Jika hanya 1 file, return direct download link (tidak perlu ZIP)
       if (uploadedFilesData.length === 1) {
         return uploadedFilesData[0].downloadURL;
       }
 
-      // Jika lebih dari 1 file, buat ZIP
       const zip = new JSZip();
 
       for (const file of uploadedFilesData) {
@@ -532,7 +514,7 @@ export default function App() {
     }
 
     try {
-      const dateStr = getFormattedDate(); // 10122024
+      const dateStr = getFormattedDate();
       const sanitizedName = folderName.replace(/[^a-zA-Z0-9]/g, "_");
       const fileName = `QR_${sanitizedName}_${dateStr}.png`;
 
@@ -595,21 +577,18 @@ export default function App() {
 
       const zip = new JSZip();
 
-      // Download semua file dan masukkan ke zip
       for (const file of folder.files) {
         const response = await fetch(file.downloadURL);
         const blob = await response.blob();
         zip.file(file.name, blob);
       }
 
-      // Generate zip dengan password
       const zipBlob = await zip.generateAsync({
         type: "blob",
         compression: "DEFLATE",
         compressionOptions: { level: 9 },
       });
 
-      // Download zip
       const url = window.URL.createObjectURL(zipBlob);
       const link = document.createElement("a");
       link.href = url;
@@ -813,12 +792,18 @@ export default function App() {
     try {
       Swal.fire({
         title: "Mengunggah...",
-        html: "Mohon tunggu, file sedang diunggah ke server<br><b>0%</b>",
+        html: `
+          <div style="text-align: left;">
+            <p style="margin-bottom: 10px;">Mohon tunggu, file sedang diunggah ke server</p>
+            <div style="background: #E5E7EB; border-radius: 9999px; height: 24px; overflow: hidden; position: relative;">
+              <div id="progress-bar" style="background: linear-gradient(90deg, #4F46E5, #6366F1); height: 100%; width: 0%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center;">
+                <span id="progress-text" style="color: white; font-size: 12px; font-weight: 600; position: absolute;">0%</span>
+              </div>
+            </div>
+            </div>
+        `,
         allowOutsideClick: false,
         showConfirmButton: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
       });
 
       const folderId = Date.now().toString();
@@ -827,14 +812,13 @@ export default function App() {
 
       for (let i = 0; i < uploadFiles.length; i++) {
         const file = uploadFiles[i];
-        const sanitizedFileName = sanitizeFileName(file.name); // ← Sanitize
+        const sanitizedFileName = sanitizeFileName(file.name);
         const existingNames = uploadedFiles.map((f) =>
           f.storagePath.split("/").pop()
         );
         let counter = 1;
         let finalFileName = sanitizedFileName;
 
-        // Jika duplicate, tambah counter
         while (existingNames.includes(finalFileName)) {
           const lastDotIndex = sanitizedFileName.lastIndexOf(".");
           const name =
@@ -875,9 +859,12 @@ export default function App() {
         });
 
         const progress = Math.round(((i + 1) / uploadFiles.length) * 100);
-        Swal.update({
-          html: `Mohon tunggu, file sedang diunggah ke server<br><b>${progress}%</b>`,
-        });
+        const progressBar = document.getElementById("progress-bar");
+        const progressText = document.getElementById("progress-text");
+        if (progressBar && progressText) {
+          progressBar.style.width = `${progress}%`;
+          progressText.textContent = `${progress}%`;
+        }
       }
 
       const folderData = {
@@ -891,13 +878,11 @@ export default function App() {
         expiryDate: Date.now() + 7 * 24 * 60 * 60 * 1000,
       };
 
-      // Save ke Firestore dan dapatkan ID yang persistent
       const docRef = await addDoc(collection(db, "folders"), folderData);
-      const savedFolderId = docRef.id; // ID unik dari Firestore!
+      const savedFolderId = docRef.id;
 
-      Swal.close(); // Tutup loading dulu
+      Swal.close();
 
-      // Tanya user mau buat QR atau tidak
       const qrResult = await Swal.fire({
         icon: "success",
         title: "Upload Berhasil! 🎉",
@@ -926,7 +911,6 @@ export default function App() {
       });
 
       if (qrResult.isConfirmed) {
-        // Buat ZIP dan upload ke Supabase
         Swal.fire({
           title: "Membuat QR Code...",
           html: "Sedang memproses file...<br><b>0%</b>",
@@ -938,7 +922,6 @@ export default function App() {
         });
 
         try {
-          // Create ZIP and get download URL
           const zipUrl = await createDownloadableZipLink(
             {
               folderId: savedFolderId,
@@ -952,7 +935,6 @@ export default function App() {
             throw new Error("Gagal membuat link download ZIP");
           }
 
-          // Generate QR Code
           const qrDataURL = await generateQRCode(
             savedFolderId,
             folderName,
@@ -962,11 +944,8 @@ export default function App() {
 
           if (qrDataURL) {
             await Swal.close();
-
-            // Sedikit jeda agar animasi penutupan benar-benar selesai
             await new Promise((resolve) => setTimeout(resolve, 150));
 
-            // Tampilkan QR Code
             Swal.fire({
               title: "📱 QR Code Siap!",
               html: `
@@ -1038,7 +1017,6 @@ export default function App() {
               }
             });
           }
-
         } catch (error) {
           console.error("Error creating QR:", error);
           Swal.fire({
@@ -1056,7 +1034,6 @@ export default function App() {
         }
       }
 
-      // Reset form
       setFolderName("");
       setOwnerName("");
       setPasscode("");
@@ -1070,6 +1047,170 @@ export default function App() {
         icon: "error",
         title: "Gagal Mengunggah",
         text: error.message || "Terjadi kesalahan saat mengunggah file",
+        confirmButtonColor: "#EF4444",
+        customClass: {
+          confirmButton: "swal-button-visible",
+        },
+      });
+    }
+  };
+
+  const showQRCode = async (folder) => {
+    const { value: enteredPin } = await Swal.fire({
+      title: "Verifikasi PIN",
+      html: `<p style="margin-bottom: 15px;">Masukkan PIN untuk melihat QR Code folder "<strong>${folder.name}</strong>"</p>`,
+      input: "number",
+      inputLabel: "Masukkan PIN",
+      inputPlaceholder: "PIN folder",
+      inputAttributes: {
+        maxlength: 10,
+        autocomplete: "off",
+      },
+      showCancelButton: true,
+      confirmButtonText: "Lihat QR",
+      cancelButtonText: "Batal",
+      confirmButtonColor: "#4F46E5",
+      cancelButtonColor: "#6B7280",
+      customClass: {
+        confirmButton: "swal-button-visible",
+        cancelButton: "swal-button-visible",
+      },
+      inputValidator: (value) => {
+        if (!value) {
+          return "PIN tidak boleh kosong!";
+        }
+        if (!/^\d+$/.test(value)) {
+          return "PIN hanya boleh berisi angka!";
+        }
+      },
+    });
+
+    if (!enteredPin) return;
+
+    if (enteredPin !== folder.passcode) {
+      Swal.fire({
+        icon: "error",
+        title: "PIN Salah",
+        text: "PIN yang Anda masukkan tidak sesuai",
+        confirmButtonColor: "#EF4444",
+        customClass: {
+          confirmButton: "swal-button-visible",
+        },
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: "Memuat QR Code...",
+      text: "Mohon tunggu",
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
+    try {
+      let zipUrl;
+
+      if (folder.files.length === 1) {
+        zipUrl = folder.files[0].downloadURL;
+      } else {
+        const zipFileName = `${folder.id}/${getZipFileName(
+          folder.name,
+          folder.ownerName
+        )}`;
+        const { data: existingFile } = await supabase.storage
+          .from("folders")
+          .list(folder.id, {
+            search: getZipFileName(folder.name, folder.ownerName),
+          });
+
+        if (existingFile && existingFile.length > 0) {
+          const { data: urlData } = supabase.storage
+            .from("folders")
+            .getPublicUrl(zipFileName);
+          zipUrl = urlData.publicUrl;
+        } else {
+          zipUrl = await createDownloadableZipLink(
+            {
+              folderId: folder.id,
+              folderName: folder.name,
+              ownerName: folder.ownerName,
+            },
+            folder.files
+          );
+        }
+      }
+
+      if (!zipUrl) {
+        throw new Error("Gagal mendapatkan link download");
+      }
+
+      const qrDataURL = await generateQRCode(
+        folder.id,
+        folder.name,
+        folder.passcode,
+        zipUrl
+      );
+
+      if (!qrDataURL) {
+        throw new Error("Gagal membuat QR Code");
+      }
+
+      Swal.fire({
+        title: "📱 QR Code",
+        html: `
+          <div style="text-align: center;">
+            <div style="background: #F0FDF4; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+              <p style="margin: 0; color: #10B981; font-weight: 600;">
+                ${
+                  folder.files.length === 1
+                    ? "✅ Scan = Auto Download File!"
+                    : "✅ Scan = Auto Download ZIP!"
+                }
+              </p>
+            </div>
+            
+            <div style="position: relative; width: 350px; height: 350px; margin: 0 auto;">
+              <img 
+                src="${qrDataURL}" 
+                style="width: 100%; height: 100%; border: 3px solid #4F46E5; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); display: block;"
+                alt="QR Code"
+              >
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #EEF2FF; border-radius: 8px; border: 2px solid #C7D2FE;">
+              <p style="margin: 0; font-size: 16px; font-weight: 600; color: #3730A3;">📁 ${
+                folder.name
+              }</p>
+              <p style="margin: 8px 0 0 0; font-size: 13px; color: #4338CA;">👤 ${
+                folder.ownerName
+              }</p>
+            </div>
+          </div>
+        `,
+        width: 550,
+        showCancelButton: true,
+        confirmButtonText: "💾 Download QR Code",
+        cancelButtonText: "Tutup",
+        confirmButtonColor: "#4F46E5",
+        cancelButtonColor: "#6B7280",
+        customClass: {
+          confirmButton: "swal-button-visible",
+          cancelButton: "swal-button-visible",
+        },
+      }).then((result) => {
+        if (result.isConfirmed) {
+          downloadQRCode(folder.name, qrDataURL);
+        }
+      });
+    } catch (error) {
+      console.error("Error showing QR:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Menampilkan QR",
+        text: error.message || "Terjadi kesalahan saat membuat QR Code",
         confirmButtonColor: "#EF4444",
         customClass: {
           confirmButton: "swal-button-visible",
@@ -1167,13 +1308,11 @@ export default function App() {
   };
 
   const downloadAllFiles = async (folder) => {
-    // Jika hanya 1 file, langsung download tanpa popup
     if (folder.files.length === 1) {
       await downloadFile(folder.files[0]);
       return;
     }
 
-    // Jika lebih dari 1 file, tampilkan pilihan
     await Swal.fire({
       title: "Pilih Metode Download",
       html: `
@@ -1217,7 +1356,6 @@ export default function App() {
               await new Promise((resolve) => setTimeout(resolve, i * 1000));
               await downloadFile(folder.files[i]);
 
-              // Show progress setiap file
               if (i < folder.files.length - 1) {
                 Swal.fire({
                   title: `Download Progress`,
@@ -1330,11 +1468,25 @@ export default function App() {
     }
   };
 
-  const getRemainingDays = (uploadDate) => {
+  const getRemainingTime = (uploadDate) => {
     const expiry = uploadDate + 7 * 24 * 60 * 60 * 1000;
     const remaining = expiry - Date.now();
-    const days = Math.ceil(remaining / (24 * 60 * 60 * 1000));
-    return days > 0 ? days : 0;
+
+    if (remaining <= 0) return "Kadaluarsa";
+
+    const days = Math.floor(remaining / (24 * 60 * 60 * 1000));
+    const hours = Math.floor(
+      (remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000)
+    );
+    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+
+    if (days > 0) {
+      return `${days} hari ${hours} jam ${minutes} menit`;
+    } else if (hours > 0) {
+      return `${hours} jam ${minutes} menit`;
+    } else {
+      return `${minutes} menit`;
+    }
   };
 
   const filteredFolders = folders.filter((folder) => {
@@ -1389,20 +1541,41 @@ export default function App() {
           transform: translateY(-2px);
           transition: all 0.2s;
         }
+        * {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        *::-webkit-scrollbar {
+          display: none;
+        }
       `}</style>
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">HitDropZone</h1>
+          <h1 className="flex items-center justify-center gap-3 text-4xl font-bold text-gray-800 mb-2">
+            {/* Logo kiri */}
+            <img
+              src={hitLogo}
+              alt="HitDropZone Logo"
+              className="w-10 h-10 object-contain"
+            />
+            HitDropZone
+            {/* Logo kanan */}
+            <img
+              src={hitLogo}
+              alt="HitDropZone Logo"
+              className="w-10 h-10 object-contain"
+            />
+          </h1>
           <p className="text-gray-600">
             Platform berbagi file tanpa registrasi - Cepat, Mudah, Aman
           </p>
           <p className="text-sm text-orange-600 mt-2">
-            ⏰ File otomatis terhapus setelah 7 hari
+            ⏰ File otomatis terhapus setelah 7 hari ⏰
           </p>
         </div>
 
-        <div className="flex gap-2 mb-6 bg-white rounded-lg p-1 shadow-md max-w-md mx-auto">
+        <div className="flex gap-2 mb-6 bg-white rounded-lg p-1 shadow-md max-w-l mx-auto">
           <button
             onClick={() => setActiveTab("upload")}
             className={`flex-1 py-3 px-6 rounded-md font-medium transition-all ${
@@ -1436,7 +1609,7 @@ export default function App() {
               <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg mb-6">
                 <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-red-800">
-                  <p className="font-semibold mb-1">⚠️ Peringatan Keamanan</p>
+                  <p className="font-semibold mb-1">Peringatan Keamanan</p>
                   <p>
                     Website ini TIDAK aman untuk file sensitif/rahasia. Hanya
                     upload file umum yang tidak mengandung data pribadi atau
@@ -1616,9 +1789,11 @@ export default function App() {
                       <button
                         onClick={loadFolders}
                         disabled={loading}
-                        className="text-indigo-600 hover:text-indigo-700 font-medium text-sm disabled:opacity-50 px-3 py-2 border border-indigo-200 rounded-lg hover:bg-indigo-50"
+                        className="text-indigo-600 hover:text-indigo-700 font-medium text-sm disabled:opacity-50 px-3 py-2 border border-indigo-200 rounded-lg hover:bg-indigo-50 flex items-center gap-2"
                       >
-                        {loading ? "Memuat..." : "🔄 Refresh"}
+                        <RefreshCw
+                          className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+                        />
                       </button>
                     </div>
                   </div>
@@ -1689,7 +1864,7 @@ export default function App() {
                           <div className="flex items-center gap-2 text-xs text-orange-600 mb-4 bg-orange-50 px-3 py-2 rounded">
                             <Clock className="w-4 h-4" />
                             <span>
-                              Tersisa {getRemainingDays(folder.uploadDate)} hari
+                              Tersisa {getRemainingTime(folder.uploadDate)}
                             </span>
                           </div>
 
@@ -1699,6 +1874,13 @@ export default function App() {
                               className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-md transition-colors text-sm font-medium"
                             >
                               Buka Folder
+                            </button>
+                            <button
+                              onClick={() => showQRCode(folder)}
+                              className="bg-purple-500 hover:bg-purple-600 text-white p-2 rounded-md transition-colors"
+                              title="Lihat QR Code"
+                            >
+                              <QrCode className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => copyShareLink(folder)}
@@ -1738,9 +1920,10 @@ export default function App() {
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => setSelectedFolder(null)}
-                        className="text-indigo-600 hover:text-indigo-700 font-medium"
+                        className="text-indigo-600 hover:text-indigo-700 p-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                        title="Kembali"
                       >
-                        ← Kembali
+                        <ArrowLeft className="w-5 h-5" />
                       </button>
                       <div>
                         <h2 className="text-2xl font-bold text-gray-800">
@@ -1749,7 +1932,7 @@ export default function App() {
                         <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                           <User className="w-4 h-4" />
                           <span>
-                            Pemilik: <strong>{selectedFolder.ownerName}</strong>
+                            <strong>{selectedFolder.ownerName}</strong>
                           </span>
                         </div>
                         <p className="text-sm text-gray-500">
@@ -1762,9 +1945,17 @@ export default function App() {
                       onClick={() => downloadAllFiles(selectedFolder)}
                       className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap"
                     >
-                      {selectedFolder.fileCount === 1
-                        ? "📥 Download File"
-                        : "📦 Download Semua"}
+                      {selectedFolder.fileCount === 1 ? (
+                        <>
+                          <Download className="inline w-5 h-5 mr-2" /> Download
+                          File
+                        </>
+                      ) : (
+                        <>
+                          <Download className="inline w-5 h-5 mr-2" /> Download
+                          Semua
+                        </>
+                      )}
                     </button>
                   </div>
 
@@ -1800,14 +1991,110 @@ export default function App() {
           )}
         </div>
 
+        {/* Accordion Bantuan & Saran */}
+        <div className="mt-8 bg-white rounded-xl shadow-lg border border-gray-200">
+          <button
+            onClick={() => setShowContact(!showContact)}
+            className="w-full flex justify-between items-center px-6 py-4 text-left font-semibold text-gray-800 hover:bg-gray-50 transition"
+          >
+            <span>💬 Butuh Bantuan atau Ada Saran?</span>
+            <svg
+              className={`w-5 h-5 transform transition-transform ${
+                showContact ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+
+          {showContact && (
+            <div className="px-6 pb-6">
+              <p className="text-sm text-gray-600 mb-4 text-center">
+                Laporkan bug atau request fitur baru kepada kami melalui salah
+                satu kontak berikut:
+              </p>
+              <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
+                {/* Email */}
+                <a
+                  href="mailto:hilmanthr@gmail.com?subject=Laporan Bug/Saran HitDropZone"
+                  className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                  </svg>
+                  Email Kami
+                </a>
+
+                {/* LinkedIn */}
+                <a
+                  href="https://www.linkedin.com/in/hilman-thoriq"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11.75 20h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.784 1.764-1.75 1.764zm14.25 12.268h-3v-5.604c0-1.337-.027-3.061-1.865-3.061-1.866 0-2.151 1.459-2.151 2.965v5.7h-3v-11h2.881v1.507h.041c.401-.757 1.381-1.555 2.844-1.555 3.041 0 3.604 2.003 3.604 4.605v6.443z" />
+                  </svg>
+                  LinkedIn
+                </a>
+
+                {/* GitHub */}
+                <a
+                  href="https://github.com/HilmanThoriq/hitdropzone/issues"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-900 text-white rounded-lg transition-colors font-medium"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                  </svg>
+                  GitHub Issues
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer paling bawah */}
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>
             ⚠️ File tersimpan di Supabase Storage dan akan otomatis terhapus
-            setelah 7 hari
+            setelah 7 hari ⚠️
           </p>
           <p className="mt-2 text-xs">
             Pastikan Anda sudah mengunduh file sebelum masa berlaku habis
           </p>
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500">
+              Dibuat dengan ❤️ oleh{" "}
+              <strong className="text-indigo-600">Hilman Thoriq</strong>
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              © 2025 HitDropZone - All Rights Reserved
+            </p>
+          </div>
         </div>
       </div>
     </div>
