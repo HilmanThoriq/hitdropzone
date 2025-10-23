@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hitdropzone.vercel.app/sitemap.xml
