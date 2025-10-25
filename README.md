@@ -187,7 +187,7 @@ hitdropzone/
 
 | Limit | Value |
 |-------|-------|
-| Max file size | 100 MB per file |
+| Max file size | 50 MB per file |
 | Max folder size | 1 GB total |
 | File retention | 7 days (auto-delete) |
 | Supabase storage | 1 GB (free tier) |
