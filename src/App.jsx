@@ -1697,7 +1697,7 @@ export default function App() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Pilih File (Max 100MB per file, Total max 1GB)
+                  Pilih File (Max 50MB per file, Total max 1GB)
                 </label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-500 transition-colors">
                   <input
