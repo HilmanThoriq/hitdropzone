@@ -31,8 +31,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { createClient } from "@supabase/supabase-js";
-import hitLogo from "./assets/hit-logo.png"
-
+import hitLogo from "./assets/hit-logo.png";
 
 // ========== FIREBASE CONFIG (untuk Firestore & Hosting) ==========
 const firebaseConfig = {
@@ -1621,7 +1620,7 @@ export default function App() {
               <h2 className="text-2xl font-bold text-gray-800 mb-4">
                 Upload File Anda
               </h2>
-
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nama Folder
@@ -1647,7 +1646,7 @@ export default function App() {
                   placeholder="Contoh: Hilman Thoriq"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-600 mt-1">
                   Nama ini akan ditampilkan kepada pengguna yang mengunduh
                 </p>
               </div>
@@ -1675,12 +1674,16 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setShowPasscode(!showPasscode)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-700"
+                    aria-label={
+                      showPasscode ? "Sembunyikan PIN" : "Tampilkan PIN"
+                    }
+                    title={showPasscode ? "Sembunyikan PIN" : "Tampilkan PIN"}
                   >
                     {showPasscode ? (
-                      <EyeOff className="w-5 h-5" />
+                      <EyeOff className="w-5 h-5" aria-hidden="true" />
                     ) : (
-                      <Eye className="w-5 h-5" />
+                      <Eye className="w-5 h-5" aria-hidden="true" />
                     )}
                   </button>
                 </div>
@@ -1689,7 +1692,7 @@ export default function App() {
                     {pinError}
                   </p>
                 ) : (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-600 mt-1">
                     PIN ini diperlukan untuk membuka dan menghapus folder
                   </p>
                 )}
@@ -1706,6 +1709,7 @@ export default function App() {
                     onChange={handleFileSelect}
                     className="hidden"
                     id="file-upload"
+                    aria-label="Pilih file untuk diunggah"
                   />
                   <label
                     htmlFor="file-upload"
@@ -1715,7 +1719,7 @@ export default function App() {
                     <span className="text-gray-600 font-medium">
                       Klik untuk pilih file
                     </span>
-                    <span className="text-gray-400 text-sm mt-1">
+                    <span className="text-gray-600 text-sm mt-1">
                       PDF, DOCX, Gambar, ZIP, dll.
                     </span>
                   </label>
@@ -1746,7 +1750,7 @@ export default function App() {
                           <p className="text-sm font-medium text-gray-800 truncate">
                             {file.name}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-600">
                             {formatFileSize(file.size)}
                           </p>
                         </div>
@@ -1754,8 +1758,10 @@ export default function App() {
                       <button
                         onClick={() => removeFile(index)}
                         className="text-red-500 hover:text-red-700 p-1"
+                        aria-label={`Hapus file ${file.name}`}
+                        title={`Hapus file ${file.name}`}
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="w-5 h-5" aria-hidden="true" />
                       </button>
                     </div>
                   ))}
@@ -1801,12 +1807,12 @@ export default function App() {
                   {loading ? (
                     <div className="text-center py-12">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                      <p className="text-gray-500 mt-4">Memuat data...</p>
+                      <p className="text-gray-600 mt-4">Memuat data...</p>
                     </div>
                   ) : filteredFolders.length === 0 ? (
                     <div className="text-center py-12">
                       <Folder className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">
+                      <p className="text-gray-600">
                         {searchQuery
                           ? "Folder tidak ditemukan"
                           : "Belum ada folder yang tersedia"}
@@ -1840,7 +1846,7 @@ export default function App() {
                                     {folder.ownerName}
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-gray-600 mt-1">
                                   {new Date(
                                     folder.uploadDate
                                   ).toLocaleDateString("id-ID", {
@@ -1853,7 +1859,7 @@ export default function App() {
                                 </p>
                               </div>
                             </div>
-                            <Lock className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                            <Lock className="w-5 h-5 text-gray-600 flex-shrink-0" />
                           </div>
 
                           <div className="flex justify-between items-center text-sm text-gray-600 mb-2">
@@ -1886,9 +1892,11 @@ export default function App() {
                               onClick={() => copyShareLink(folder)}
                               className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-md transition-colors"
                               title="Salin link berbagi"
+                              aria-label="Salin link berbagi folder"
                             >
                               <svg
                                 className="w-4 h-4"
+                                aria-hidden="true"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -1905,8 +1913,9 @@ export default function App() {
                               onClick={() => deleteFolder(folder)}
                               className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-md transition-colors"
                               title="Hapus folder (perlu PIN)"
+                              aria-label={`Hapus folder ${folder.name}`}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" aria-hidden="true" />
                             </button>
                           </div>
                         </div>
@@ -1935,7 +1944,7 @@ export default function App() {
                             <strong>{selectedFolder.ownerName}</strong>
                           </span>
                         </div>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-600">
                           {selectedFolder.fileCount} file •{" "}
                           {formatFileSize(selectedFolder.totalSize)}
                         </p>
@@ -1971,7 +1980,7 @@ export default function App() {
                             <p className="font-medium text-gray-800 truncate">
                               {file.name}
                             </p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-600">
                               {formatFileSize(file.size)}
                             </p>
                           </div>
@@ -2078,7 +2087,7 @@ export default function App() {
         </div>
 
         {/* Footer paling bawah */}
-        <div className="mt-8 text-center text-sm text-gray-500">
+        <div className="mt-8 text-center text-sm text-gray-600">
           <p>
             ⚠️ File tersimpan di Supabase Storage dan akan otomatis terhapus
             setelah 7 hari ⚠️
@@ -2087,11 +2096,11 @@ export default function App() {
             Pastikan Anda sudah mengunduh file sebelum masa berlaku habis
           </p>
           <div className="mt-6 pt-4 border-t border-gray-200">
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-600">
               Dibuat dengan ❤️ oleh{" "}
               <strong className="text-indigo-600">Hilman Thoriq</strong>
             </p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-600 mt-1">
               © 2025 HitDropZone - All Rights Reserved
             </p>
           </div>
