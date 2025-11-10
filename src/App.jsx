@@ -1367,11 +1367,11 @@ export default function App() {
       <p style="margin-bottom: 15px;">Bagaimana Anda ingin mengunduh ${folder.files.length} file?</p>
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <button id="zip-btn" class="download-option-btn" style="padding: 15px; background: #4F46E5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
-          📦 Download sebagai ZIP<br>
+          📦 Download sebagai ZIP 📦<br>
           <small style="font-weight: 400; opacity: 0.9;">Semua file dalam 1 file ZIP</small>
         </button>
         <button id="one-by-one-btn" class="download-option-btn" style="padding: 15px; background: #10B981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
-          📥 Download Satu per Satu<br>
+          📥 Download Satu per Satu 📥<br>
           <small style="font-weight: 400; opacity: 0.9;">File diunduh terpisah</small>
         </button>
       </div>
