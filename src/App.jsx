@@ -84,7 +84,7 @@ export default function App() {
         setSelectedFolder(folder);
         Swal.fire({
           icon: "success",
-          title: "Folder Terbuka! 🎉",
+          title: "🎉 Folder Terbuka! 🎉",
           text: `Selamat datang di folder "${folder.name}"`,
           timer: 2000,
           showConfirmButton: false,
@@ -342,7 +342,7 @@ export default function App() {
 
       Swal.fire({
         icon: "success",
-        title: "Link Berhasil Disalin! 🎉",
+        title: "🎉 Link Berhasil Disalin! 🎉",
         html: `
         <div style="text-align: left;">
           <p style="margin-bottom: 10px; font-size: 14px;">Link telah disalin ke clipboard:</p>
@@ -635,32 +635,58 @@ export default function App() {
   const showPrivacyWarning = async () => {
     const result = await Swal.fire({
       icon: "warning",
-      title: "⚠️ Peringatan Privasi & Keamanan ⚠️",
+      title: "⚠️ Peringatan ⚠️ <br> Privasi & Keamanan",
       html: `
-        <div style="text-align: left; padding: 10px;">
-          <p style="margin-bottom: 15px; font-weight: 600; color: #DC2626;">
+        <div style="text-align: left; padding: 8px;">
+          <p style="margin-bottom: 12px; font-weight: 600; color: #DC2626; font-size: 13px;">
             PENTING! Harap dibaca dengan seksama:
           </p>
-          <ul style="text-align: left; line-height: 1.8; color: #374151;">
-            <li>🔓 <strong>Website ini TIDAK terenkripsi end-to-end</strong></li>
-            <li>📁 Hanya upload file yang bersifat <strong>UMUM dan TIDAK SENSITIF</strong></li>
-            <li>❌ <strong>JANGAN</strong> upload dokumen rahasia/pribadi seperti:
-              <ul style="margin-top: 8px; margin-left: 20px;">
+          <ul style="text-align: left; line-height: 1.6; color: #374151; list-style: none; padding: 0; font-size: 12px;">
+            <li style="margin-bottom: 8px; display: flex; align-items: start; gap: 8px;">
+              <svg style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;" fill="none" stroke="#DC2626" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              <span><strong>Website ini TIDAK terenkripsi end-to-end</strong></span>
+            </li>
+            <li style="margin-bottom: 8px; display: flex; align-items: start; gap: 8px;">
+              <svg style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;" fill="none" stroke="#059669" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              <span>Hanya upload file yang bersifat <strong>UMUM dan TIDAK SENSITIF</strong></span>
+            </li>
+            <li style="margin-bottom: 8px;">
+              <div style="display: flex; align-items: start; gap: 8px; margin-bottom: 6px;">
+                <svg style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;" fill="none" stroke="#DC2626" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                <span><strong>JANGAN</strong> upload dokumen rahasia/pribadi seperti:</span>
+              </div>
+              <ul style="margin-left: 24px; list-style: disc; font-size: 11px; line-height: 1.5;">
                 <li>KTP, SIM, Paspor, atau identitas pribadi</li>
                 <li>Dokumen negara atau dokumen rahasia perusahaan</li>
                 <li>Data keuangan, password, atau informasi sensitif lainnya</li>
               </ul>
             </li>
-            <li>⚠️ File Anda dapat diakses oleh siapa saja yang memiliki PIN</li>
-            <li>🗑️ File akan otomatis terhapus setelah 7 hari</li>
+            <li style="margin-bottom: 8px; display: flex; align-items: start; gap: 8px;">
+              <svg style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;" fill="none" stroke="#F59E0B" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+              <span>File Anda dapat diakses oleh siapa saja yang memiliki PIN</span>
+            </li>
+            <li style="margin-bottom: 8px; display: flex; align-items: start; gap: 8px;">
+              <svg style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;" fill="none" stroke="#6B7280" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span>File akan otomatis terhapus setelah 7 hari</span>
+            </li>
           </ul>
-          <p style="margin-top: 20px; font-weight: 600; color: #DC2626;">
+          <p style="margin-top: 12px; font-weight: 600; color: #DC2626; font-size: 12px;">
             Dengan melanjutkan, Anda bertanggung jawab penuh atas file yang diunggah.
           </p>
         </div>
       `,
       showCancelButton: true,
-      confirmButtonText: "Saya Mengerti, Lanjutkan",
+      confirmButtonText: "Saya Mengerti",
       cancelButtonText: "Batal",
       confirmButtonColor: "#DC2626",
       cancelButtonColor: "#6B7280",
@@ -884,7 +910,7 @@ export default function App() {
 
       const qrResult = await Swal.fire({
         icon: "success",
-        title: "Upload Berhasil! 🎉",
+        title: "🎉 Upload Berhasil! 🎉",
         html: `
           <p>Folder "${folderName}" berhasil diunggah dengan ${uploadedFiles.length} file</p>
           <p style="font-size: 14px; color: #6B7280; margin-top: 10px;">File akan otomatis terhapus dalam 7 hari</p>
@@ -900,7 +926,7 @@ export default function App() {
         `,
         showCancelButton: true,
         confirmButtonText: "Ya, Buat QR Code",
-        cancelButtonText: "Tidak, Terima Kasih",
+        cancelButtonText: "Tutup",
         confirmButtonColor: "#10B981",
         cancelButtonColor: "#6B7280",
         customClass: {
@@ -915,9 +941,7 @@ export default function App() {
           html: "Sedang memproses file...<br><b>0%</b>",
           allowOutsideClick: false,
           showConfirmButton: false,
-          didOpen: () => {
-            Swal.showLoading();
-          },
+
         });
 
         try {
@@ -966,7 +990,7 @@ export default function App() {
                           : "Scan QR Code untuk download semua file (ZIP)"
                       }
                     </p>
-                    <div style="position: relative; width: 350px; height: 350px; margin: 0 auto;">
+                    <div style="position: relative; width: 100%; height: 100%; margin: 0 auto;">
                   <img 
                     src="${qrDataURL}" 
                     style="width: 100%; height: 100%; border: 3px solid #4F46E5; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); display: block;"
@@ -1104,9 +1128,6 @@ export default function App() {
       text: "Mohon tunggu",
       allowOutsideClick: false,
       showConfirmButton: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
     });
 
     try {
@@ -1168,16 +1189,23 @@ export default function App() {
         <line x1='3' y1='14' x2='7' y2='14'></line>
         <line x1='3' y1='17' x2='7' y2='17'></line>
       </svg>
-      <span>QR Code</span>
+      <span>QR Code </span>
+      <svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='margin-left: 10px;'>
+        <rect x='3' y='3' width='7' height='7'></rect>
+        <rect x='14' y='3' width='7' height='7'></rect>
+        <rect x='14' y='14' width='7' height='7'></rect>
+        <line x1='3' y1='14' x2='7' y2='14'></line>
+        <line x1='3' y1='17' x2='7' y2='17'></line>
+      </svg>
     </div> 
 
           <div style="text-align: center;">
             <div style="background: #F0FDF4; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-              <p style="margin: 0; color: #10B981; font-weight: 800;">
+              <p style="margin: 0; color: #10B981; font-weight: 600;">
                 ${
                   folder.files.length === 1
-                    ? "✅ Scan = Auto Download File!"
-                    : "✅ Scan = Auto Download ZIP!"
+                    ? "✅ Scan = Auto Download File! ✅"
+                    : "✅ Scan = Auto Download ZIP! ✅"
                 }
               </p>
             </div>
