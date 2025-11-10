@@ -635,7 +635,7 @@ export default function App() {
   const showPrivacyWarning = async () => {
     const result = await Swal.fire({
       icon: "warning",
-      title: "⚠️ Peringatan Privasi & Keamanan",
+      title: "⚠️ Peringatan Privasi & Keamanan ⚠️",
       html: `
         <div style="text-align: left; padding: 10px;">
           <p style="margin-bottom: 15px; font-weight: 600; color: #DC2626;">
@@ -1158,11 +1158,22 @@ export default function App() {
       }
 
       Swal.fire({
-        title: "📱 QR Code",
+        // title: "📱 QR Code",
         html: `
+          <div style="display: flex; align-items: center; justify-content: center; font-size: 1.875rem; font-weight: 800; margin-bottom: 15px;">
+      <svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='margin-right: 10px;'>
+        <rect x='3' y='3' width='7' height='7'></rect>
+        <rect x='14' y='3' width='7' height='7'></rect>
+        <rect x='14' y='14' width='7' height='7'></rect>
+        <line x1='3' y1='14' x2='7' y2='14'></line>
+        <line x1='3' y1='17' x2='7' y2='17'></line>
+      </svg>
+      <span>QR Code</span>
+    </div> 
+
           <div style="text-align: center;">
             <div style="background: #F0FDF4; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-              <p style="margin: 0; color: #10B981; font-weight: 600;">
+              <p style="margin: 0; color: #10B981; font-weight: 800;">
                 ${
                   folder.files.length === 1
                     ? "✅ Scan = Auto Download File!"
@@ -1171,7 +1182,7 @@ export default function App() {
               </p>
             </div>
             
-            <div style="position: relative; width: 350px; height: 350px; margin: 0 auto;">
+            <div style="position: relative; width: 100%; height: 100%; margin: 0 auto;">
               <img 
                 src="${qrDataURL}" 
                 style="width: 100%; height: 100%; border: 3px solid #4F46E5; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); display: block;"
@@ -1179,7 +1190,7 @@ export default function App() {
               >
             </div>
             
-            <div style="margin-top: 20px; padding: 15px; background: #EEF2FF; border-radius: 8px; border: 2px solid #C7D2FE;">
+            <div style="margin-top: 20px; padding: 15px; background: #EEF2FF; border-radius: 8px; border: 2px solid #C7D2FE; text-align: left;">
               <p style="margin: 0; font-size: 16px; font-weight: 600; color: #3730A3;">📁 ${
                 folder.name
               }</p>
@@ -1191,7 +1202,7 @@ export default function App() {
         `,
         width: 550,
         showCancelButton: true,
-        confirmButtonText: "💾 Download QR Code",
+        confirmButtonText: "Download QR Code",
         cancelButtonText: "Tutup",
         confirmButtonColor: "#4F46E5",
         cancelButtonColor: "#6B7280",
@@ -1620,7 +1631,7 @@ export default function App() {
               <h2 className="text-2xl font-bold text-gray-800 mb-4">
                 Upload File Anda
               </h2>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nama Folder
@@ -1744,8 +1755,8 @@ export default function App() {
                       key={index}
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
                     >
-                      <div className="flex items-center gap-3 flex-1">
-                        <File className="w-5 h-5 text-indigo-600" />
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <File className="w-5 h-5 text-indigo-600 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-800 truncate">
                             {file.name}
@@ -1757,7 +1768,7 @@ export default function App() {
                       </div>
                       <button
                         onClick={() => removeFile(index)}
-                        className="text-red-500 hover:text-red-700 p-1"
+                        className="text-red-500 hover:text-red-700 p-1 flex-shrink-0"
                         aria-label={`Hapus file ${file.name}`}
                         title={`Hapus file ${file.name}`}
                       >
@@ -2031,11 +2042,13 @@ export default function App() {
                 Laporkan bug atau request fitur baru kepada kami melalui salah
                 satu kontak berikut:
               </p>
-              <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
+
+              {/* Kontainer Tombol */}
+              <div className="flex flex-col md:flex-row gap-4 justify-center">
                 {/* Email */}
                 <a
                   href="mailto:hilmanthr@gmail.com?subject=Laporan Bug/Saran HitDropZone"
-                  className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
+                  className="flex items-center justify-center w-full md:w-auto gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
                 >
                   <svg
                     className="w-5 h-5"
@@ -2053,7 +2066,7 @@ export default function App() {
                   href="https://www.linkedin.com/in/hilman-thoriq"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                  className="flex items-center justify-center w-full md:w-auto gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
                 >
                   <svg
                     className="w-5 h-5"
@@ -2070,7 +2083,7 @@ export default function App() {
                   href="https://github.com/HilmanThoriq/hitdropzone/issues"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-900 text-white rounded-lg transition-colors font-medium"
+                  className="flex items-center justify-center w-full md:w-auto gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-900 text-white rounded-lg transition-colors font-medium"
                 >
                   <svg
                     className="w-5 h-5"
