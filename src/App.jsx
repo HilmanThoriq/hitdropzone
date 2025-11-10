@@ -351,7 +351,7 @@ export default function App() {
           </div>
           
           <div style="margin-top: 15px; padding: 12px; background: #FEF3C7; border-radius: 6px; border: 1px solid #FDE68A;">
-            <p style="margin: 0; font-size: 12px; color: #92400E; font-weight: 600;">⚠️ PERINGATAN KEAMANAN</p>
+            <p style="margin: 0; font-size: 12px; color: #92400E; font-weight: 600;">⚠️ PERINGATAN KEAMANAN ⚠️</p>
             <p style="margin: 5px 0 0 0; font-size: 11px; color: #78350F;">
               • Link ini berisi PIN folder<br>
               • Siapa saja yang punya link bisa akses folder<br>
@@ -361,7 +361,7 @@ export default function App() {
           </div>
 
           <p style="margin-top: 12px; font-size: 12px; color: #6B7280; text-align: center;">
-            📤 Bagikan link via WA/Email/DM pribadi
+            📤 Bagikan link via WA/Email/DM pribadi 📤
           </p>
         </div>
       `,
@@ -921,7 +921,7 @@ export default function App() {
             </p>
           </div>
           <hr style="margin: 20px 0; border: none; border-top: 1px solid #E5E7EB;">
-          <p style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">📱 Buat QR Code untuk berbagi?</p>
+          <p style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">Buat QR Code untuk berbagi?</p>
           <p style="font-size: 12px; color: #6B7280;">Scan QR = Otomatis download ZIP!</p>
         `,
         showCancelButton: true,
@@ -941,7 +941,6 @@ export default function App() {
           html: "Sedang memproses file...<br><b>0%</b>",
           allowOutsideClick: false,
           showConfirmButton: false,
-
         });
 
         try {
@@ -970,26 +969,37 @@ export default function App() {
             await new Promise((resolve) => setTimeout(resolve, 150));
 
             Swal.fire({
-              title: "📱 QR Code Siap!",
+              // title: "📱 QR Code Siap! 📱",
               html: `
+                  <div style="display: flex; align-items: center; justify-content: center; font-size: 1.875rem; font-weight: 700; margin-bottom: 15px;">
+                    <svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='margin-right: 10px;'>
+                      <rect x='3' y='3' width='7' height='7'></rect>
+                      <rect x='14' y='3' width='7' height='7'></rect>
+                      <rect x='14' y='14' width='7' height='7'></rect>
+                      <line x1='3' y1='14' x2='7' y2='14'></line>
+                      <line x1='3' y1='17' x2='7' y2='17'></line>
+                    </svg>
+                    <span>QR Code Siap </span>
+                    <svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='margin-left: 10px;'>
+                      <rect x='3' y='3' width='7' height='7'></rect>
+                      <rect x='14' y='3' width='7' height='7'></rect>
+                      <rect x='14' y='14' width='7' height='7'></rect>
+                      <line x1='3' y1='14' x2='7' y2='14'></line>
+                      <line x1='3' y1='17' x2='7' y2='17'></line>
+                    </svg>
+                  </div> 
+
                   <div style="text-align: center;">
                     <div style="background: #F0FDF4; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
                       <p style="margin: 0; color: #10B981; font-weight: 600;">
                         ${
                           uploadedFiles.length === 1
-                            ? "✅ Scan = Auto Download File!"
-                            : "✅ Scan = Auto Download ZIP!"
+                            ? "✅ Scan = Auto Download File ✅"
+                            : "✅ Scan = Auto Download ZIP ✅"
                         }
                       </p>
                     </div>
-                    
-                    <p style="margin-bottom: 15px; color: #6B7280; font-size: 14px;">
-                      ${
-                        uploadedFiles.length === 1
-                          ? "Scan QR Code untuk download file langsung"
-                          : "Scan QR Code untuk download semua file (ZIP)"
-                      }
-                    </p>
+                   
                     <div style="position: relative; width: 100%; height: 100%; margin: 0 auto;">
                   <img 
                     src="${qrDataURL}" 
@@ -1009,7 +1019,7 @@ export default function App() {
                     </div>
 
                     <div style="margin-top: 15px; padding: 12px; background: #FFFBEB; border-radius: 8px; border: 2px solid #FDE68A;">
-                      <p style="margin: 0; font-size: 12px; color: #92400E; font-weight: 600;">💡 Cara Pakai:</p>
+                      <p style="margin: 0; font-size: 12px; color: #92400E; font-weight: 600;">💡 Cara Pakai : 💡</p>
                       <p style="margin: 5px 0 0 0; font-size: 11px; color: #78350F; text-align: left;">
                         1. Simpan/bagikan QR Code ini<br>
                         2. Scan dengan kamera HP<br>
@@ -1020,7 +1030,7 @@ export default function App() {
                     </div>
 
                     <div style="margin-top: 12px; font-size: 11px; color: #6B7280;">
-                      <p style="margin: 3px 0;">⏰ File online tersedia selama 7 hari</p>
+                      <p style="margin: 3px 0;">⏰ File online tersedia selama 7 hari ⏰</p>
                     </div>
                   </div>
                 `,
@@ -1181,7 +1191,7 @@ export default function App() {
       Swal.fire({
         // title: "📱 QR Code",
         html: `
-          <div style="display: flex; align-items: center; justify-content: center; font-size: 1.875rem; font-weight: 800; margin-bottom: 15px;">
+          <div style="display: flex; align-items: center; justify-content: center; font-size: 1.875rem; font-weight: 700; margin-bottom: 15px;">
       <svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='margin-right: 10px;'>
         <rect x='3' y='3' width='7' height='7'></rect>
         <rect x='14' y='3' width='7' height='7'></rect>
