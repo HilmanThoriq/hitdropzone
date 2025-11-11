@@ -181,12 +181,12 @@ export default function App() {
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
 
-    const invalidFiles = files.filter((file) => file.size > 100 * 1024 * 1024);
+    const invalidFiles = files.filter((file) => file.size > 50 * 1024 * 1024);
     if (invalidFiles.length > 0) {
       Swal.fire({
         icon: "error",
         title: "File Terlalu Besar",
-        text: `Beberapa file melebihi 100MB: ${invalidFiles
+        text: `Beberapa file melebihi 50 MB: ${invalidFiles
           .map((f) => f.name)
           .join(", ")}`,
         confirmButtonColor: "#EF4444",
